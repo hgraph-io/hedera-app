@@ -91,6 +91,10 @@ pre {
   word-wrap: break-word; /* Break long words */
 }
 
+a {
+  text-decoration: underline;
+}
+
 .link-button {
   background-color: black;
   color: white;

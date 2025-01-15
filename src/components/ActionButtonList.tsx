@@ -14,6 +14,7 @@ import {
 } from "ethers";
 import {
   hederaTestnetNative as hederaNativeTestnet,
+  transactionToBase64String,
   WalletConnectProvider,
 } from "../lib/adapters/hedera";
 import { hederaTestnet as hederaTestnetEvm } from "@reown/appkit/networks";
@@ -31,7 +32,6 @@ import {
   queryToBase64String,
   SignAndExecuteQueryParams,
   SignMessageParams,
-  transactionToBase64String,
 } from "@hashgraph/hedera-wallet-connect";
 import { universalHederaAdapter } from "../config";
 
@@ -40,6 +40,7 @@ const testNativeReceiver = "0.0.4848542";
 
 interface ActionButtonListProps {
   sendHash: (hash: string) => void;
+  sendTxId: (id: string) => void;
   sendSignMsg: (hash: string) => void;
   sendBalance: (balance: string) => void;
 
@@ -48,6 +49,7 @@ interface ActionButtonListProps {
 
 export const ActionButtonList = ({
   sendHash,
+  sendTxId,
   sendSignMsg,
   sendBalance,
   sendNodeAddresses,
@@ -93,7 +95,7 @@ export const ActionButtonList = ({
       transactionList,
     });
     setSignedHederaTx(undefined);
-    sendHash(result.transactionHash);
+    sendTxId(result.transactionId);
   };
 
   const hedera_signMessage = async () => {
@@ -117,6 +119,7 @@ export const ActionButtonList = ({
     const hbarAmount = new Hbar(Number(1));
     const transaction = new TransferTransaction()
       .setTransactionId(TransactionId.generate(accountId!))
+      .setMaxTransactionFee(new Hbar(Number(1)))
       .addHbarTransfer(accountId.toString()!, hbarAmount.negated())
       .addHbarTransfer(testNativeReceiver, hbarAmount);
 
@@ -165,7 +168,7 @@ export const ActionButtonList = ({
       transactionList: transactionToBase64String(transaction),
     });
 
-    sendHash(result.transactionHash);
+    sendTxId(result.transactionId);
   };
   // --- EIP-155 ---
 

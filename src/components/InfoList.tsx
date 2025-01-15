@@ -7,12 +7,13 @@ import {
   useWalletInfo,
   useAppKitProvider,
   useAppKitNetworkCore,
-  type Provider,
 } from "@reown/appkit/react";
 import { BrowserProvider } from "ethers";
+import { WalletConnectProvider } from "../lib/adapters/hedera";
 
 interface InfoListProps {
   hash: string;
+  txId: string;
   signedMsg: string;
   balance: string;
 
@@ -21,20 +22,20 @@ interface InfoListProps {
 
 export const InfoList = ({
   hash,
+  txId,
   signedMsg,
   balance,
   nodes,
 }: InfoListProps) => {
-  const [statusTx, setStatusTx] = useState("");
-
+  const [statusEthTx, setStatusEthTx] = useState("");
   const { themeMode, themeVariables } = useAppKitTheme();
   const state = useAppKitState();
   const { chainId } = useAppKitNetworkCore();
   const { address, caipAddress, isConnected, status } = useAppKitAccount();
   const events = useAppKitEvents();
   const walletInfo = useWalletInfo();
-  const { walletProvider: EIP155Provider } =
-    useAppKitProvider<Provider>("eip155");
+  const { walletProvider } = useAppKitProvider<WalletConnectProvider>("eip155");
+  const isEthChain = state.activeChain == "eip155";
 
   useEffect(() => {
     console.log("Events: ", events);
@@ -42,27 +43,29 @@ export const InfoList = ({
 
   useEffect(() => {
     const checkTransactionStatus = async () => {
-      if (hash && EIP155Provider && state.activeChain == "eip155") {
+      
+      if (!walletProvider) return;
+      if (isEthChain && hash) {
         try {
-          const provider = new BrowserProvider(EIP155Provider, chainId);
+          const provider = new BrowserProvider(walletProvider, chainId);
           const receipt = await provider.getTransactionReceipt(hash);
-          setStatusTx(
+          setStatusEthTx(
             receipt?.status === 1
               ? "Success"
               : receipt?.status === 0
-                ? "Failed"
-                : "Pending",
+              ? "Failed"
+              : "Pending",
           );
         } catch (err) {
           console.error("Error checking transaction status:", err);
-          setStatusTx("Error");
+          setStatusEthTx("Error");
         }
       }
     };
 
     checkTransactionStatus();
-  }, [hash, EIP155Provider, chainId, state.activeChain]);
-
+  }, [hash, walletProvider, chainId, state.activeChain, txId, isEthChain]);
+  
   return (
     <>
       {balance && (
@@ -70,13 +73,32 @@ export const InfoList = ({
           <h2>Balance: {balance}</h2>
         </section>
       )}
-      {hash && (
+      {hash && isEthChain && (
         <section>
           <h2>Sign Tx</h2>
           <pre>
             Hash: {hash}
             <br />
-            Status: {statusTx}
+            Status: {statusEthTx}
+            <br />
+          </pre>
+        </section>
+      )}
+      {txId && !isEthChain && (
+        <section>
+          <h2>Transaction</h2>
+          <pre>
+            Id:
+            <a
+              href={`https://hashscan.io/${
+                state.selectedNetworkId?.toString() == "hedera:testnet"
+                  ? "testnet/"
+                  : ""
+              }transaction/${txId}`}
+              target="_blank"
+            >
+              {txId}
+            </a>
             <br />
           </pre>
         </section>

@@ -583,14 +583,6 @@
     long "^5.2.3"
     protobufjs "7.2.5"
 
-"@hashgraph/proto@^2.15.0":
-  version "2.15.0"
-  resolved "https://registry.yarnpkg.com/@hashgraph/proto/-/proto-2.15.0.tgz#10c94825acea256373ba896c6229d22f6de9c19b"
-  integrity sha512-ULSNIwQZIroTssrEfNoUcIcWEJ9BIwKZiAsaRvJ2+Rr3XIr+np7UXv6sEkJU+jSyzk97LrTdiRAoc/hJO9Vx8Q==
-  dependencies:
-    long "^4.0.0"
-    protobufjs "^7.2.5"
-
 "@hashgraph/sdk@^2.56.0":
   version "2.56.0"
   resolved "https://registry.yarnpkg.com/@hashgraph/sdk/-/sdk-2.56.0.tgz#a73ab4fa52ff1ffeea54fea03d242e1991427075"
@@ -3551,11 +3543,6 @@ lodash@4.17.21:
   version "4.17.21"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.21.tgz#679591c564c3bffaae8454cf0b3df370c3d6911c"
   integrity sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==
-
-long@^4.0.0:
-  version "4.0.0"
-  resolved "https://registry.yarnpkg.com/long/-/long-4.0.0.tgz#9a7b71cfb7d361a194ea555241c92f7468d5bf28"
-  integrity sha512-XsP+KhQif4bjX1kbuSiySJFNAehNxgLb6hPRGJ9QsUr8ajHkuXGdrHmFUTUUXhDwVX2R5bY4JNZEwbUiMhV+MA==
 
 long@^5.0.0, long@^5.2.3:
   version "5.2.3"

@@ -33,12 +33,17 @@ createAppKit({
 
 export function App() {
   const [transactionHash, setTransactionHash] = useState("");
+  const [transactionId, setTransactionId] = useState("");
   const [signedMsg, setSignedMsg] = useState("");
   const [balance, setBalance] = useState("");
   const [nodes, setNodes] = useState<string[]>([]);
 
   const receiveHash = (hash: string) => {
     setTransactionHash(hash); // Update the state with the transaction hash
+  };
+  
+  const receiveTxId = (hash: string) => {
+    setTransactionId(hash); // Update the state with the transaction id
   };
 
   const receiveSignedMsg = (signedMsg: string) => {
@@ -72,6 +77,7 @@ export function App() {
       <appkit-button balance="hide" />
       <ActionButtonList
         sendHash={receiveHash}
+        sendTxId={receiveTxId}
         sendSignMsg={receiveSignedMsg}
         sendBalance={receivebalance}
         sendNodeAddresses={receiveNodes}
@@ -92,6 +98,7 @@ export function App() {
       </div>
       <InfoList
         hash={transactionHash}
+        txId={transactionId}
         signedMsg={signedMsg}
         balance={balance}
         nodes={nodes}
