@@ -1,4 +1,4 @@
-import { CaipNetwork, RequestArguments } from "@reown/appkit";
+import { CaipNetwork, RequestArguments } from '@reown/appkit'
 import {
   GetNodeAddressesResult,
   ExecuteTransactionParams,
@@ -12,13 +12,13 @@ import {
   SignTransactionParams,
   SignTransactionResult,
   HederaJsonRpcMethod,
-} from "@hashgraph/hedera-wallet-connect";
-import { Transaction } from "@hashgraph/sdk";
+} from '@hashgraph/hedera-wallet-connect'
+import { Transaction } from '@hashgraph/sdk'
 import UniversalProvider, {
   IProvider,
   RpcProviderMap,
   UniversalProviderOpts,
-} from "@walletconnect/universal-provider";
+} from '@walletconnect/universal-provider'
 import {
   BrowserProvider,
   Contract,
@@ -26,36 +26,33 @@ import {
   hexlify,
   isHexString,
   toUtf8Bytes,
-} from "ethers";
+} from 'ethers'
 import type {
   EstimateGasTransactionArgs,
   SendTransactionArgs,
   WriteContractArgs,
-} from "@reown/appkit-core";
-import HIP820Provider from "./hip820-provider";
-import {
-  getChainsFromApprovedSession,
-  mergeRequiredOptionalNamespaces,
-} from "../utils/misc";
-import Eip155Provider from "./eip155-provider";
+} from '@reown/appkit-core'
+import HIP820Provider from './hip820-provider'
+import { getChainsFromApprovedSession, mergeRequiredOptionalNamespaces } from '../utils/misc'
+import Eip155Provider from './eip155-provider'
 
 export type WalletConnectProviderConfig = {
-  chains: CaipNetwork[];
-} & UniversalProviderOpts;
+  chains: CaipNetwork[]
+} & UniversalProviderOpts
 
 // Reown AppKit UniversalProvider for HIP-820 & EIP-155 version implementation of the @hashgraph/hedera-wallet-connect DAppConnector
 export class HederaWalletConnectProvider extends UniversalProvider {
-  public nativeProvider?: HIP820Provider;
-  public eip155Provider?: Eip155Provider;
+  public nativeProvider?: HIP820Provider
+  public eip155Provider?: Eip155Provider
 
   constructor(opts: UniversalProviderOpts) {
-    super(opts);
+    super(opts)
   }
   static async init(opts: UniversalProviderOpts) {
-    const provider = new HederaWalletConnectProvider(opts);
+    const provider = new HederaWalletConnectProvider(opts)
 
     //@ts-expect-error - private base method
-    await provider.initialize();
+    await provider.initialize()
     provider.namespaces = {
       ...(provider.namespaces?.eip155
         ? {
@@ -73,9 +70,9 @@ export class HederaWalletConnectProvider extends UniversalProvider {
             },
           }
         : {}),
-    };
+    }
 
-    return provider;
+    return provider
   }
   // private async init() {
   //   //@ts-expect-error - private base method
@@ -84,18 +81,17 @@ export class HederaWalletConnectProvider extends UniversalProvider {
   // }
 
   emit(event: string, data?: unknown) {
-    this.events.emit(event, data);
+    this.events.emit(event, data)
   }
 
   getAccountAddresses(): string[] {
     if (!this.session || !this.namespaces) {
-      throw new Error("Not initialized. Please call connect()");
+      throw new Error('Not initialized. Please call connect()')
     }
 
     return Object.values(this.session.namespaces).flatMap(
-      (namespace) =>
-        namespace.accounts.map((account) => account.split(":")[2]) ?? [],
-    );
+      (namespace) => namespace.accounts.map((account) => account.split(':')[2]) ?? [],
+    )
   }
 
   override async request<T = unknown>(
@@ -104,18 +100,12 @@ export class HederaWalletConnectProvider extends UniversalProvider {
     expiry?: number | undefined,
   ): Promise<T> {
     if (!this.session || !this.namespaces) {
-      throw new Error("Please call connect() before request()");
+      throw new Error('Please call connect() before request()')
     }
-    const chainId = chain ?? this.namespaces.eip155.chains[0];
-    if (
-      Object.values(HederaJsonRpcMethod).includes(
-        args.method as HederaJsonRpcMethod,
-      )
-    ) {
+    const chainId = chain ?? this.namespaces.eip155.chains[0]
+    if (Object.values(HederaJsonRpcMethod).includes(args.method as HederaJsonRpcMethod)) {
       if (!this.nativeProvider) {
-        throw new Error(
-          "nativeProvider not initialized. Please call connect()",
-        );
+        throw new Error('nativeProvider not initialized. Please call connect()')
       }
       return this.nativeProvider?.request({
         request: {
@@ -124,10 +114,10 @@ export class HederaWalletConnectProvider extends UniversalProvider {
         chainId: chainId!,
         topic: this.session.topic,
         expiry,
-      });
+      })
     } else {
       if (!this.eip155Provider) {
-        throw new Error("eip155Provider not initialized");
+        throw new Error('eip155Provider not initialized')
       }
 
       return this.eip155Provider?.request({
@@ -137,7 +127,7 @@ export class HederaWalletConnectProvider extends UniversalProvider {
         chainId: chainId!,
         topic: this.session.topic,
         expiry,
-      });
+      })
     }
   }
 
@@ -148,10 +138,10 @@ export class HederaWalletConnectProvider extends UniversalProvider {
    * @returns Promise\<{@link GetNodeAddressesResult}\>
    */
   async hedera_getNodeAddresses() {
-    return await this.request<GetNodeAddressesResult["result"]>({
+    return await this.request<GetNodeAddressesResult['result']>({
       method: HederaJsonRpcMethod.GetNodeAddresses,
       params: undefined,
-    });
+    })
   }
 
   /**
@@ -171,10 +161,10 @@ export class HederaWalletConnectProvider extends UniversalProvider {
    * ```
    */
   async hedera_executeTransaction(params: ExecuteTransactionParams) {
-    return await this.request<ExecuteTransactionResult["result"]>({
+    return await this.request<ExecuteTransactionResult['result']>({
       method: HederaJsonRpcMethod.ExecuteTransaction,
       params,
-    });
+    })
   }
 
   /**
@@ -195,10 +185,10 @@ export class HederaWalletConnectProvider extends UniversalProvider {
    * ```
    */
   async hedera_signMessage(params: SignMessageParams) {
-    return await this.request<SignMessageResult["result"]>({
+    return await this.request<SignMessageResult['result']>({
       method: HederaJsonRpcMethod.SignMessage,
       params,
-    });
+    })
   }
 
   /**
@@ -220,10 +210,10 @@ export class HederaWalletConnectProvider extends UniversalProvider {
    * ```
    */
   async hedera_signAndExecuteQuery(params: SignAndExecuteQueryParams) {
-    return await this.request<SignAndExecuteQueryResult["result"]>({
+    return await this.request<SignAndExecuteQueryResult['result']>({
       method: HederaJsonRpcMethod.SignAndExecuteQuery,
       params,
-    });
+    })
   }
 
   /**
@@ -244,13 +234,11 @@ export class HederaWalletConnectProvider extends UniversalProvider {
    * const result = await dAppConnector.signAndExecuteTransaction(params)
    * ```
    */
-  async hedera_signAndExecuteTransaction(
-    params: SignAndExecuteTransactionParams,
-  ) {
-    return await this.request<SignAndExecuteTransactionResult["result"]>({
+  async hedera_signAndExecuteTransaction(params: SignAndExecuteTransactionParams) {
+    return await this.request<SignAndExecuteTransactionResult['result']>({
       method: HederaJsonRpcMethod.SignAndExecuteTransaction,
       params,
-    });
+    })
   }
 
   /**
@@ -274,69 +262,63 @@ export class HederaWalletConnectProvider extends UniversalProvider {
    */
   async hedera_signTransaction(params: SignTransactionParams) {
     if (!this.session) {
-      throw new Error("Session not initialized. Please call connect()");
+      throw new Error('Session not initialized. Please call connect()')
     }
     if (!this.nativeProvider) {
-      throw new Error("nativeProvider not initialized. Please call connect()");
+      throw new Error('nativeProvider not initialized. Please call connect()')
     }
 
-    if (typeof params?.transactionBody === "string") {
+    if (typeof params?.transactionBody === 'string') {
       this.logger.warn(
-        "Transaction body is a string. This is not recommended, please migrate to passing a transaction object directly.",
-      );
-      return await this.request<SignTransactionResult["result"]>({
+        'Transaction body is a string. This is not recommended, please migrate to passing a transaction object directly.',
+      )
+      return await this.request<SignTransactionResult['result']>({
         method: HederaJsonRpcMethod.SignTransaction,
         params,
-      });
+      })
     }
 
     if (params?.transactionBody instanceof Transaction) {
-      const signerAccountId = params?.signerAccountId?.split(":")?.pop();
+      const signerAccountId = params?.signerAccountId?.split(':')?.pop()
       const isValidSigner = this.nativeProvider
         ?.requestAccounts()
-        .includes(signerAccountId ?? "");
+        .includes(signerAccountId ?? '')
 
       if (!isValidSigner) {
-        throw new Error(`Signer not found for account ${signerAccountId}`);
+        throw new Error(`Signer not found for account ${signerAccountId}`)
       }
 
       if (!params?.transactionBody) {
-        throw new Error("No transaction provided");
+        throw new Error('No transaction provided')
       }
 
       return (await this.nativeProvider.signTransaction(
         params.transactionBody as Transaction,
         this.session.topic,
-      ))!;
+      ))!
     }
 
     throw new Error(
-      "Transaction sent in incorrect format. Ensure transaction body is either a base64 transaction body or Transaction object.",
-    );
+      'Transaction sent in incorrect format. Ensure transaction body is either a base64 transaction body or Transaction object.',
+    )
   }
 
   async eth_signMessage(message: string, address: string) {
-    const hexMessage = isHexString(message)
-      ? message
-      : hexlify(toUtf8Bytes(message));
+    const hexMessage = isHexString(message) ? message : hexlify(toUtf8Bytes(message))
     const signature = await this.request({
-      method: "personal_sign",
+      method: 'personal_sign',
       params: [hexMessage, address],
-    });
+    })
 
-    return signature as `0x${string}`;
+    return signature as `0x${string}`
   }
 
-  async eth_estimateGas(
-    data: EstimateGasTransactionArgs,
-    address: string,
-    networkId: number,
-  ) {
+  async eth_estimateGas(data: EstimateGasTransactionArgs, address: string, networkId: number) {
     if (!address) {
-      throw new Error("estimateGas - address is undefined");
+      throw new Error('estimateGas - address is undefined')
     }
-    if (data.chainNamespace && data.chainNamespace !== "eip155") {
-      throw new Error("estimateGas - chainNamespace is not eip155");
+    if (data.chainNamespace && data.chainNamespace !== 'eip155') {
+      throw new Error('estimateGas - chainNamespace is not eip155')
     }
 
     const txParams = {
@@ -344,23 +326,19 @@ export class HederaWalletConnectProvider extends UniversalProvider {
       to: data.to,
       data: data.data,
       type: 0,
-    };
-    const browserProvider = new BrowserProvider(this, networkId);
-    const signer = new JsonRpcSigner(browserProvider, address);
+    }
+    const browserProvider = new BrowserProvider(this, networkId)
+    const signer = new JsonRpcSigner(browserProvider, address)
 
-    return await signer.estimateGas(txParams);
+    return await signer.estimateGas(txParams)
   }
 
-  async eth_sendTransaction(
-    data: SendTransactionArgs,
-    address: string,
-    networkId: number,
-  ) {
+  async eth_sendTransaction(data: SendTransactionArgs, address: string, networkId: number) {
     if (!address) {
-      throw new Error("sendTransaction - address is undefined");
+      throw new Error('sendTransaction - address is undefined')
     }
-    if (data.chainNamespace && data.chainNamespace !== "eip155") {
-      throw new Error("sendTransaction - chainNamespace is not eip155");
+    if (data.chainNamespace && data.chainNamespace !== 'eip155') {
+      throw new Error('sendTransaction - chainNamespace is not eip155')
     }
     const txParams = {
       to: data.to,
@@ -369,100 +347,96 @@ export class HederaWalletConnectProvider extends UniversalProvider {
       gasPrice: data.gasPrice,
       data: data.data,
       type: 0,
-    };
-    const browserProvider = new BrowserProvider(this, networkId);
-    const signer = new JsonRpcSigner(browserProvider, address);
-    const txResponse = await signer.sendTransaction(txParams);
-    const txReceipt = await txResponse.wait();
+    }
+    const browserProvider = new BrowserProvider(this, networkId)
+    const signer = new JsonRpcSigner(browserProvider, address)
+    const txResponse = await signer.sendTransaction(txParams)
+    const txReceipt = await txResponse.wait()
 
-    return (txReceipt?.hash as `0x${string}`) || null;
+    return (txReceipt?.hash as `0x${string}`) || null
   }
 
-  async eth_writeContract(
-    data: WriteContractArgs,
-    address: string,
-    chainId: number,
-  ) {
+  async eth_writeContract(data: WriteContractArgs, address: string, chainId: number) {
     if (!address) {
-      throw new Error("writeContract - address is undefined");
+      throw new Error('writeContract - address is undefined')
     }
-    const browserProvider = new BrowserProvider(this, chainId);
-    const signer = new JsonRpcSigner(browserProvider, address);
-    const contract = new Contract(data.tokenAddress, data.abi, signer);
+    const browserProvider = new BrowserProvider(this, chainId)
+    const signer = new JsonRpcSigner(browserProvider, address)
+    const contract = new Contract(data.tokenAddress, data.abi, signer)
     if (!contract || !data.method) {
-      throw new Error("Contract method is undefined");
+      throw new Error('Contract method is undefined')
     }
-    const method = contract[data.method];
+    const method = contract[data.method]
     if (method) {
-      return await method(...data.args);
+      return await method(...data.args)
     }
-    throw new Error("Contract method is undefined");
+    throw new Error('Contract method is undefined')
   }
 
   private getProviders(): Record<string, IProvider> {
     if (!this.client) {
-      throw new Error("Sign Client not initialized");
+      throw new Error('Sign Client not initialized')
     }
 
     if (!this.session || !this.namespaces) {
-      throw new Error("Not initialized. Please call connect() before enable()");
+      throw new Error('Not initialized. Please call connect() before enable()')
     }
 
-    const namespaces = Object.keys(this.namespaces);
+    const namespaces = Object.keys(this.namespaces)
 
-    const providers: Record<string, IProvider> = {};
+    const providers: Record<string, IProvider> = {}
 
     namespaces.forEach((namespace) => {
-      const accounts = this.session!.namespaces[namespace].accounts;
-      const approvedChains = getChainsFromApprovedSession(accounts);
+      const accounts = this.session!.namespaces[namespace].accounts
+      const approvedChains = getChainsFromApprovedSession(accounts)
       const mergedNamespaces = mergeRequiredOptionalNamespaces(
         this.namespaces,
         this.optionalNamespaces,
-      );
+      )
       const combinedNamespace = {
         ...mergedNamespaces[namespace],
         accounts,
         chains: approvedChains,
-      };
+      }
 
       switch (namespace) {
-        case "hedera": {
+        case 'hedera': {
           const provider = new HIP820Provider({
             namespace: combinedNamespace,
             events: this.events,
             client: this.client,
-          });
-          this.nativeProvider = provider;
-          providers[namespace] = provider;
-          break;
+          })
+          this.nativeProvider = provider
+          providers[namespace] = provider
+          break
         }
-        case "eip155": {
+        case 'eip155': {
           const provider = new Eip155Provider({
             namespace: combinedNamespace,
             events: this.events,
             client: this.client,
-          });
-          this.eip155Provider = provider;
-          providers[namespace] = provider;
-          break;
+          })
+          this.eip155Provider = provider
+          providers[namespace] = provider
+          break
         }
         default:
-          throw new Error(`Unsupported namespace: ${namespace}`);
+          throw new Error(`Unsupported namespace: ${namespace}`)
       }
-    });
+    })
 
-    return providers;
+    return providers
   }
 
   // @ts-expect-error - override base rpcProviders logic
   get rpcProviders(): RpcProviderMap {
     if (!this.nativeProvider && !this.eip155Provider) {
-      return this.getProviders();
+      return this.getProviders()
     }
     return {
       hedera: this.nativeProvider!,
       eip155: this.eip155Provider!,
-    };
+    }
   }
 
   set rpcProviders(_: RpcProviderMap) {}

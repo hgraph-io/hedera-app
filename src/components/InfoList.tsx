@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react'
 import {
   useAppKitState,
   useAppKitTheme,
@@ -6,59 +6,48 @@ import {
   useWalletInfo,
   useAppKitProvider,
   useAppKitNetworkCore,
-} from "@reown/appkit/react";
-import { BrowserProvider } from "ethers";
-import { HederaWalletConnectProvider } from "../lib/adapters/hedera";
+} from '@reown/appkit/react'
+import { BrowserProvider } from 'ethers'
+import { HederaWalletConnectProvider } from '../lib/adapters/hedera'
 
 interface InfoListProps {
-  hash: string;
-  txId: string;
-  signedMsg: string;
-  balance: string;
+  hash: string
+  txId: string
+  signedMsg: string
+  balance: string
 
-  nodes: string[];
+  nodes: string[]
 }
 
-export const InfoList = ({
-  hash,
-  txId,
-  signedMsg,
-  balance,
-  nodes,
-}: InfoListProps) => {
-  const [statusEthTx, setStatusEthTx] = useState("");
-  const { themeMode, themeVariables } = useAppKitTheme();
-  const state = useAppKitState();
-  const { chainId } = useAppKitNetworkCore();
-  const { address, caipAddress, isConnected, status } = useAppKitAccount();
-  const walletInfo = useWalletInfo();
-  const { walletProvider } =
-    useAppKitProvider<HederaWalletConnectProvider>("eip155");
-  const isEthChain = state.activeChain == "eip155";
+export const InfoList = ({ hash, txId, signedMsg, balance, nodes }: InfoListProps) => {
+  const [statusEthTx, setStatusEthTx] = useState('')
+  const { themeMode, themeVariables } = useAppKitTheme()
+  const state = useAppKitState()
+  const { chainId } = useAppKitNetworkCore()
+  const { address, caipAddress, isConnected, status } = useAppKitAccount()
+  const walletInfo = useWalletInfo()
+  const { walletProvider } = useAppKitProvider<HederaWalletConnectProvider>('eip155')
+  const isEthChain = state.activeChain == 'eip155'
 
   useEffect(() => {
     const checkTransactionStatus = async () => {
-      if (!walletProvider) return;
+      if (!walletProvider) return
       if (isEthChain && hash) {
         try {
-          const provider = new BrowserProvider(walletProvider, chainId);
-          const receipt = await provider.getTransactionReceipt(hash);
+          const provider = new BrowserProvider(walletProvider, chainId)
+          const receipt = await provider.getTransactionReceipt(hash)
           setStatusEthTx(
-            receipt?.status === 1
-              ? "Success"
-              : receipt?.status === 0
-                ? "Failed"
-                : "Pending",
-          );
+            receipt?.status === 1 ? 'Success' : receipt?.status === 0 ? 'Failed' : 'Pending',
+          )
         } catch (err) {
-          console.error("Error checking transaction status:", err);
-          setStatusEthTx("Error");
+          console.error('Error checking transaction status:', err)
+          setStatusEthTx('Error')
         }
       }
-    };
+    }
 
-    checkTransactionStatus();
-  }, [hash, walletProvider, chainId, state.activeChain, txId, isEthChain]);
+    checkTransactionStatus()
+  }, [hash, walletProvider, chainId, state.activeChain, txId, isEthChain])
 
   return (
     <>
@@ -71,12 +60,10 @@ export const InfoList = ({
         <section>
           <h2>Transaction</h2>
           <pre>
-            Hash:{" "}
+            Hash:{' '}
             <a
               href={`https://hashscan.io/${
-                state.selectedNetworkId?.toString() == "eip155:296"
-                  ? "testnet/"
-                  : ""
+                state.selectedNetworkId?.toString() == 'eip155:296' ? 'testnet/' : ''
               }transaction/${hash}`}
               target="_blank"
             >
@@ -95,9 +82,7 @@ export const InfoList = ({
             Id:
             <a
               href={`https://hashscan.io/${
-                state.selectedNetworkId?.toString() == "hedera:testnet"
-                  ? "testnet/"
-                  : ""
+                state.selectedNetworkId?.toString() == 'hedera:testnet' ? 'testnet/' : ''
               }transaction/${txId}`}
               target="_blank"
             >
@@ -174,5 +159,5 @@ export const InfoList = ({
         </section>
       )}
     </>
-  );
-};
+  )
+}

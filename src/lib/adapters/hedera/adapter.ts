@@ -1,166 +1,155 @@
-import { type ChainNamespace, isReownName } from "@reown/appkit-common";
-import { CoreHelperUtil } from "@reown/appkit-core";
-import { AdapterBlueprint } from "@reown/appkit/adapters";
-import { WcHelpersUtil } from "@reown/appkit";
-import { LedgerId } from "@hashgraph/sdk";
-import { ProviderUtil } from "@reown/appkit/store";
-import {
-  BrowserProvider,
-  Contract,
-  formatUnits,
-  JsonRpcSigner,
-  parseUnits,
-} from "ethers";
-import { HederaWalletConnectConnector } from "./wallet-connect-connector";
-import { getAccountInfo } from "./utils";
-import { HederaWalletConnectProvider } from "./providers";
+import { type ChainNamespace, isReownName } from '@reown/appkit-common'
+import { CoreHelperUtil } from '@reown/appkit-core'
+import { AdapterBlueprint } from '@reown/appkit/adapters'
+import { WcHelpersUtil } from '@reown/appkit'
+import { LedgerId } from '@hashgraph/sdk'
+import { ProviderUtil } from '@reown/appkit/store'
+import { BrowserProvider, Contract, formatUnits, JsonRpcSigner, parseUnits } from 'ethers'
+import { HederaWalletConnectConnector } from './wallet-connect-connector'
+import { getAccountInfo } from './utils'
+import { HederaWalletConnectProvider } from './providers'
 
-type UniversalProvider = Parameters<
-  AdapterBlueprint["setUniversalProvider"]
->[0];
+type UniversalProvider = Parameters<AdapterBlueprint['setUniversalProvider']>[0]
 
-const hederaNamespace = "hedera" as ChainNamespace;
+const hederaNamespace = 'hedera' as ChainNamespace
 
 export class HederaAdapter extends AdapterBlueprint {
   constructor(params: AdapterBlueprint.Params) {
-    if (params.namespace !== hederaNamespace && params.namespace !== "eip155") {
-      throw new Error('Namespace must be "hedera" or "eip155"');
+    if (params.namespace !== hederaNamespace && params.namespace !== 'eip155') {
+      throw new Error('Namespace must be "hedera" or "eip155"')
     }
-    if (params.namespace == "eip155") {
-      if (params.networks?.some((n) => n.chainNamespace != "eip155")) {
-        throw new Error("Invalid networks for eip155 namespace");
+    if (params.namespace == 'eip155') {
+      if (params.networks?.some((n) => n.chainNamespace != 'eip155')) {
+        throw new Error('Invalid networks for eip155 namespace')
       }
     } else {
       if (params.networks?.some((n) => n.chainNamespace != hederaNamespace)) {
-        throw new Error("Invalid networks for hedera namespace");
+        throw new Error('Invalid networks for hedera namespace')
       }
     }
     super({
       ...params,
-    });
+    })
   }
 
-  public override setUniversalProvider(
-    universalProvider: UniversalProvider,
-  ): void {
+  public override setUniversalProvider(universalProvider: UniversalProvider): void {
     this.addConnector(
       new HederaWalletConnectConnector({
         provider: universalProvider,
         caipNetworks: this.caipNetworks || [],
         namespace: this.namespace as ChainNamespace,
       }),
-    );
+    )
   }
 
   public async connect(
     params: AdapterBlueprint.ConnectParams,
   ): Promise<AdapterBlueprint.ConnectResult> {
     return Promise.resolve({
-      id: "WALLET_CONNECT",
-      type: "WALLET_CONNECT" as const,
+      id: 'WALLET_CONNECT',
+      type: 'WALLET_CONNECT' as const,
       chainId: Number(params.chainId),
       provider: this.provider as UniversalProvider,
-      address: "",
-    });
+      address: '',
+    })
   }
 
   public async disconnect() {
     try {
-      const connector = this.getWalletConnectConnector();
-      await connector.disconnect();
+      const connector = this.getWalletConnectConnector()
+      await connector.disconnect()
     } catch (error) {
-      console.warn("UniversalAdapter:disconnect - error", error);
+      console.warn('UniversalAdapter:disconnect - error', error)
     }
   }
 
   public async getAccounts({
     namespace,
   }: AdapterBlueprint.GetAccountsParams & {
-    namespace: ChainNamespace;
+    namespace: ChainNamespace
   }): Promise<AdapterBlueprint.GetAccountsResult> {
-    const provider = this.provider as UniversalProvider;
+    const provider = this.provider as UniversalProvider
     const addresses = (provider?.session?.namespaces?.[namespace]?.accounts
       ?.map((account) => {
-        const [, , address] = account.split(":");
-        return address;
+        const [, , address] = account.split(':')
+        return address
       })
-      .filter((address, index, self) => self.indexOf(address) === index) ||
-      []) as string[];
+      .filter((address, index, self) => self.indexOf(address) === index) || []) as string[]
 
     return Promise.resolve({
       accounts: addresses.map((address) =>
-        CoreHelperUtil.createAccount(namespace, address, "eoa"),
+        CoreHelperUtil.createAccount(namespace, address, 'eoa'),
       ),
-    });
+    })
   }
 
   public async syncConnectors() {
-    return Promise.resolve();
+    return Promise.resolve()
   }
 
   public async getBalance(
     params: AdapterBlueprint.GetBalanceParams,
   ): Promise<AdapterBlueprint.GetBalanceResult> {
-    const { address, caipNetwork } = params;
+    const { address, caipNetwork } = params
 
     if (!caipNetwork) {
       return Promise.resolve({
-        balance: "0",
+        balance: '0',
         decimals: 0,
-        symbol: "",
-      });
+        symbol: '',
+      })
     }
 
     const accountInfo = await getAccountInfo(
       caipNetwork.testnet ? LedgerId.TESTNET : LedgerId.MAINNET,
       address, // accountId or non-long-zero evmAddress
-    );
+    )
 
     return Promise.resolve({
       balance: accountInfo?.balance
         ? formatUnits(accountInfo.balance.balance, 8).toString()
-        : "0",
+        : '0',
       decimals: caipNetwork.nativeCurrency.decimals,
       symbol: caipNetwork.nativeCurrency.symbol,
-    });
+    })
   }
 
   public override async signMessage(
     params: AdapterBlueprint.SignMessageParams,
   ): Promise<AdapterBlueprint.SignMessageResult> {
-    const { provider, message, address } = params;
+    const { provider, message, address } = params
     if (!provider) {
-      throw new Error("Provider is undefined");
+      throw new Error('Provider is undefined')
     }
-    const hederaProvider = provider as unknown as HederaWalletConnectProvider;
+    const hederaProvider = provider as unknown as HederaWalletConnectProvider
 
-    let signature = "";
+    let signature = ''
 
     if (this.namespace === hederaNamespace) {
       const response = await hederaProvider.hedera_signMessage({
         signerAccountId: address,
         message,
-      });
+      })
 
-      signature = response.signatureMap;
+      signature = response.signatureMap
     } else {
-      signature = await hederaProvider.eth_signMessage(message, address);
+      signature = await hederaProvider.eth_signMessage(message, address)
     }
 
-    return { signature };
+    return { signature }
   }
 
   public override async estimateGas(
     params: AdapterBlueprint.EstimateGasTransactionArgs,
   ): Promise<AdapterBlueprint.EstimateGasTransactionResult> {
-    const { provider, caipNetwork, address } = params;
-    if (this.namespace !== "eip155") {
-      throw new Error("Namespace is not eip155");
+    const { provider, caipNetwork, address } = params
+    if (this.namespace !== 'eip155') {
+      throw new Error('Namespace is not eip155')
     }
     if (!provider) {
-      throw new Error("Provider is undefined");
+      throw new Error('Provider is undefined')
     }
-    const hederaProvider = provider as unknown as HederaWalletConnectProvider;
+    const hederaProvider = provider as unknown as HederaWalletConnectProvider
 
     const result = await hederaProvider.eth_estimateGas(
       {
@@ -170,21 +159,20 @@ export class HederaAdapter extends AdapterBlueprint {
       },
       address as `0x${string}`,
       Number(caipNetwork?.id),
-    );
+    )
 
-    return { gas: result };
+    return { gas: result }
   }
 
   public async sendTransaction(
     params: AdapterBlueprint.SendTransactionParams,
   ): Promise<AdapterBlueprint.SendTransactionResult> {
     if (!params.provider) {
-      throw new Error("Provider is undefined");
+      throw new Error('Provider is undefined')
     }
-    const hederaProvider =
-      params.provider as unknown as HederaWalletConnectProvider;
+    const hederaProvider = params.provider as unknown as HederaWalletConnectProvider
 
-    if (this.namespace == "eip155") {
+    if (this.namespace == 'eip155') {
       const tx = await hederaProvider.eth_sendTransaction(
         {
           value: params.value as bigint,
@@ -196,12 +184,12 @@ export class HederaAdapter extends AdapterBlueprint {
         },
         params.address,
         Number(params.caipNetwork?.id),
-      );
+      )
 
-      return { hash: tx };
+      return { hash: tx }
     } else {
       // TODO: EthereumTransaction for hedera_signAndExecuteTransaction?
-      throw new Error("Namespace is not eip155");
+      throw new Error('Namespace is not eip155')
     }
   }
 
@@ -209,140 +197,126 @@ export class HederaAdapter extends AdapterBlueprint {
     params: AdapterBlueprint.WriteContractParams,
   ): Promise<AdapterBlueprint.WriteContractResult> {
     if (!params.provider) {
-      throw new Error("Provider is undefined");
+      throw new Error('Provider is undefined')
     }
-    if (this.namespace !== "eip155") {
-      throw new Error("Namespace is not eip155");
+    if (this.namespace !== 'eip155') {
+      throw new Error('Namespace is not eip155')
     }
-    const {
-      provider,
-      caipNetwork,
-      caipAddress,
-      abi,
-      tokenAddress,
-      method,
-      args,
-    } = params;
+    const { provider, caipNetwork, caipAddress, abi, tokenAddress, method, args } = params
 
-    const browserProvider = new BrowserProvider(
-      provider,
-      Number(caipNetwork?.id),
-    );
-    const signer = new JsonRpcSigner(browserProvider, caipAddress);
-    const contract = new Contract(tokenAddress, abi, signer);
+    const browserProvider = new BrowserProvider(provider, Number(caipNetwork?.id))
+    const signer = new JsonRpcSigner(browserProvider, caipAddress)
+    const contract = new Contract(tokenAddress, abi, signer)
 
     if (!contract || !method) {
-      throw new Error("Contract method is undefined");
+      throw new Error('Contract method is undefined')
     }
-    const contractMethod = contract[method];
+    const contractMethod = contract[method]
     if (contractMethod) {
-      const result = await contractMethod(...args);
-      return { hash: result };
-    } else throw new Error("Contract method is undefined");
+      const result = await contractMethod(...args)
+      return { hash: result }
+    } else throw new Error('Contract method is undefined')
   }
 
   public async getEnsAddress(
     params: AdapterBlueprint.GetEnsAddressParams,
   ): Promise<AdapterBlueprint.GetEnsAddressResult> {
-    if (this.namespace !== "eip155") {
-      throw new Error("Namespace is not eip155");
+    if (this.namespace !== 'eip155') {
+      throw new Error('Namespace is not eip155')
     }
-    const { name, caipNetwork } = params;
+    const { name, caipNetwork } = params
     if (caipNetwork) {
       if (isReownName(name)) {
         return {
           address: (await WcHelpersUtil.resolveReownName(name)) || false,
-        };
+        }
       }
     }
 
-    return { address: false };
+    return { address: false }
   }
 
   public parseUnits(
     params: AdapterBlueprint.ParseUnitsParams,
   ): AdapterBlueprint.ParseUnitsResult {
-    return parseUnits(params.value, params.decimals);
+    return parseUnits(params.value, params.decimals)
   }
 
   public formatUnits(
     params: AdapterBlueprint.FormatUnitsParams,
   ): AdapterBlueprint.FormatUnitsResult {
-    return formatUnits(params.value, params.decimals);
+    return formatUnits(params.value, params.decimals)
   }
 
   public async getCapabilities(
     params: AdapterBlueprint.GetCapabilitiesParams,
   ): Promise<unknown> {
-    if (this.namespace !== "eip155") {
-      throw new Error("Namespace is not eip155");
+    if (this.namespace !== 'eip155') {
+      throw new Error('Namespace is not eip155')
     }
 
-    const provider = ProviderUtil.getProvider("eip155");
+    const provider = ProviderUtil.getProvider('eip155')
 
     if (!provider) {
-      throw new Error("Provider is undefined");
+      throw new Error('Provider is undefined')
     }
 
-    const walletCapabilitiesString =
-      provider.session?.sessionProperties?.["capabilities"];
+    const walletCapabilitiesString = provider.session?.sessionProperties?.['capabilities']
     if (walletCapabilitiesString) {
       try {
         const walletCapabilities = JSON.parse(walletCapabilitiesString)
-        const accountCapabilities = walletCapabilities[params];
+        const accountCapabilities = walletCapabilities[params]
         if (accountCapabilities) {
-          return accountCapabilities;
+          return accountCapabilities
         }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
         throw new Error('Error parsing wallet capabilities')
       }
     }
     return await provider.request({
-      method: "wallet_getCapabilities",
+      method: 'wallet_getCapabilities',
       params: [params],
-    });
+    })
   }
 
   // Not supported
   public async getProfile(): Promise<AdapterBlueprint.GetProfileResult> {
     return Promise.resolve({
-      profileImage: "",
-      profileName: "",
-    });
+      profileImage: '',
+      profileName: '',
+    })
   }
   // Not supported
   public async grantPermissions(): Promise<unknown> {
-    return Promise.resolve({});
+    return Promise.resolve({})
   }
   // Not supported
   public async revokePermissions(): Promise<`0x${string}`> {
-    return Promise.resolve("0x");
+    return Promise.resolve('0x')
   }
 
   public async syncConnection(params: AdapterBlueprint.SyncConnectionParams) {
     return Promise.resolve({
-      id: "WALLET_CONNECT",
-      type: "WALLET_CONNECT" as const,
+      id: 'WALLET_CONNECT',
+      type: 'WALLET_CONNECT' as const,
       chainId: params.chainId!,
       provider: this.provider as UniversalProvider,
-      address: "",
-    });
+      address: '',
+    })
   }
 
-  public override async switchNetwork(
-    params: AdapterBlueprint.SwitchNetworkParams,
-  ) {
-    const { caipNetwork } = params;
-    const connector = this.getWalletConnectConnector();
-    connector.provider.setDefaultChain(caipNetwork.caipNetworkId);
+  public override async switchNetwork(params: AdapterBlueprint.SwitchNetworkParams) {
+    const { caipNetwork } = params
+    const connector = this.getWalletConnectConnector()
+    connector.provider.setDefaultChain(caipNetwork.caipNetworkId)
   }
 
   public getWalletConnectProvider() {
-    const connector = this.connectors.find((c) => c.type === "WALLET_CONNECT");
+    const connector = this.connectors.find((c) => c.type === 'WALLET_CONNECT')
 
-    const provider = connector?.provider as UniversalProvider;
+    const provider = connector?.provider as UniversalProvider
 
-    return provider;
+    return provider
   }
 }
