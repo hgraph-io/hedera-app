@@ -1,3 +1,4 @@
+import { ChainNamespace } from '@reown/appkit-common'
 import {
   useDisconnect,
   useAppKitAccount,
@@ -5,15 +6,7 @@ import {
   useAppKitState,
   useAppKitProvider,
 } from '@reown/appkit/react'
-import {
-  BrowserProvider,
-  // JsonRpcSigner,
-  formatEther,
-  JsonRpcSigner,
-  parseEther,
-  Wallet,
-} from 'ethers'
-import { transactionToBase64String, HederaWalletConnectProvider } from '../lib/adapters/hedera'
+import { BrowserProvider, formatEther, JsonRpcSigner, parseEther, Wallet } from 'ethers'
 import { useState } from 'react'
 import {
   AccountInfo,
@@ -27,17 +20,15 @@ import {
   queryToBase64String,
   SignAndExecuteQueryParams,
   SignMessageParams,
+  transactionToBase64String,
+  HederaProvider,
 } from '@hashgraph/hedera-wallet-connect'
-import { hederaNamespace } from '../config'
-// import { universalHederaAdapter } from "../config";
 
 // Example receiver addresses
-
 const testEthReceiver = '0xE53F9824319B891CD4D6050dBF2b242Be7e13344'
 const testNativeReceiver = '0.0.4848542'
 
 // Example types, and message (EIP-712)
-
 const types = {
   Person: [
     { name: 'name', type: 'string' },
@@ -85,7 +76,7 @@ export const ActionButtonList = ({
   const [signedHederaTx, setSignedHederaTx] = useState<HederaTransaction>()
   const [signedEthTx, setSignedEthTx] = useState<string>()
 
-  const { walletProvider } = useAppKitProvider(activeChain ?? hederaNamespace)
+  const { walletProvider } = useAppKitProvider(activeChain ?? ('hedera' as ChainNamespace))
   const handleDisconnect = async () => {
     try {
       await disconnect()
@@ -336,7 +327,7 @@ export const ActionButtonList = ({
               </div>
             </>
           )}
-          {activeChain == hederaNamespace && (
+          {activeChain == ('hedera' as ChainNamespace) && (
             <>
               <div>
                 <br />
