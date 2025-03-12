@@ -11,34 +11,35 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@hashgraph/hedera-wallet-connect": "^1.4.2",
-    "@hashgraph/sdk": "^2.56.0",
-    "@reown/appkit": "^1.6.5",
-    "@reown/appkit-core": "^1.6.5",
-    "@walletconnect/modal": "^2.7.0",
-    "@walletconnect/modal-core": "^2.7.0",
-    "@walletconnect/qrcode-modal": "^1.8.0",
-    "@walletconnect/sign-client": "2.18.0",
-    "@walletconnect/universal-provider": "2.18.0",
-    "@walletconnect/utils": "2.18.0",
-    "@walletconnect/web3wallet": "^1.16.1",
-    "ethers": "^6.13.4",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "@hashgraph/hedera-wallet-connect": "0.0.0-hg-531",
+    "@hashgraph/sdk": "^2.60.1",
+    "@reown/appkit": "^1.6.0",
+    "@reown/appkit-core": "^1.6.0",
+    "@walletconnect/sign-client": "^2.18.0",
+    "@walletconnect/universal-provider": "^2.18.0",
+    "@walletconnect/utils": "^2.18.0",
+    "ethers": "^6.13.5",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.17.0",
-    "@types/react": "^18.3.18",
-    "@types/react-dom": "^18.3.5",
+    "@eslint/js": "^9.22.0",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "^4.3.4",
-    "eslint": "^9.17.0",
-    "eslint-plugin-react-hooks": "^5.0.0",
-    "eslint-plugin-react-refresh": "^0.4.16",
-    "globals": "^15.14.0",
-    "prettier": "^3.5.1",
-    "typescript": "~5.6.2",
-    "typescript-eslint": "^8.18.2",
-    "vite": "^6.0.5",
-    "vite-plugin-node-polyfills": "^0.22.0"
+    "@walletconnect/types": "^2.18.1",
+    "eslint": "^9.22.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^16.0.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.26.1",
+    "vite": "^6.2.1",
+    "vite-plugin-node-polyfills": "^0.23.0"
+  },
+  "resolutions": {
+    "@hashgraph/sdk": "2.60.1",
+    "@walletconnect/universal-provider": "^2.18.0"
   }
 }

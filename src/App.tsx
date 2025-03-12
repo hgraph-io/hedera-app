@@ -1,6 +1,7 @@
 import './App.css'
 import { useState } from 'react'
 import { createAppKit } from '@reown/appkit/react'
+import { HederaChainDefinition } from '@hashgraph/hedera-wallet-connect'
 import { ActionButtonList } from './components/ActionButtonList'
 import { InfoList } from './components/InfoList'
 import {
@@ -11,14 +12,12 @@ import {
   eip155HederaAdapter,
   universalProvider,
 } from './config'
-import { hederaTestnetNative } from './lib/adapters/hedera'
 
 // Create modal
 createAppKit({
   adapters: [nativeHederaAdapter, eip155HederaAdapter],
-  // @ts-expect-error - UniversalProvider false positive types error
   universalProvider,
-  defaultNetwork: hederaTestnetNative,
+  defaultNetwork: HederaChainDefinition.Native.Testnet,
   projectId,
   metadata,
   networks,

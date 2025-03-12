@@ -8,7 +8,7 @@ import {
   useAppKitNetworkCore,
 } from '@reown/appkit/react'
 import { BrowserProvider } from 'ethers'
-import { HederaWalletConnectProvider } from '../lib/adapters/hedera'
+import { HederaProvider } from '@hashgraph/hedera-wallet-connect'
 
 interface InfoListProps {
   hash: string
@@ -26,7 +26,7 @@ export const InfoList = ({ hash, txId, signedMsg, balance, nodes }: InfoListProp
   const { chainId } = useAppKitNetworkCore()
   const { address, caipAddress, isConnected, status } = useAppKitAccount()
   const walletInfo = useWalletInfo()
-  const { walletProvider } = useAppKitProvider<HederaWalletConnectProvider>('eip155')
+  const { walletProvider } = useAppKitProvider<HederaProvider>('eip155')
   const isEthChain = state.activeChain == 'eip155'
 
   useEffect(() => {
