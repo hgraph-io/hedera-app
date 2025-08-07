@@ -4,12 +4,13 @@ import { describe, it, expect } from 'vitest'
 export function detectConnectionMode(
   v1Connected: boolean,
   v1Session: any,
-  universalProviderSession: any
+  universalProviderSession: any,
 ): 'none' | 'v1' | 'v2' {
   // Check v2 connection first (universalProvider with namespaces)
-  if (universalProviderSession && 
-      (universalProviderSession.namespaces?.hedera || 
-       universalProviderSession.namespaces?.eip155)) {
+  if (
+    universalProviderSession &&
+    (universalProviderSession.namespaces?.hedera || universalProviderSession.namespaces?.eip155)
+  ) {
     // This is definitely a v2 connection
     return 'v2'
   } else if (v1Connected && v1Session) {
@@ -32,8 +33,7 @@ export function getV2Namespace(session: any): 'hedera' | 'eip155' | null {
 export function isV1Session(session: any): boolean {
   if (!session) return false
   // V1 sessions don't have namespaces or have empty namespaces
-  return !session.namespaces || 
-         (Object.keys(session.namespaces || {}).length === 0)
+  return !session.namespaces || Object.keys(session.namespaces || {}).length === 0
 }
 
 // Helper to check if session is v2
@@ -59,8 +59,8 @@ describe('Connection Detection Utilities', () => {
     it('should return "v2" for session with hedera namespace', () => {
       const v2Session = {
         namespaces: {
-          hedera: { accounts: ['hedera:testnet:0.0.123'] }
-        }
+          hedera: { accounts: ['hedera:testnet:0.0.123'] },
+        },
       }
       const result = detectConnectionMode(false, null, v2Session)
       expect(result).toBe('v2')
@@ -69,8 +69,8 @@ describe('Connection Detection Utilities', () => {
     it('should return "v2" for session with eip155 namespace', () => {
       const v2Session = {
         namespaces: {
-          eip155: { accounts: ['eip155:296:0xABC'] }
-        }
+          eip155: { accounts: ['eip155:296:0xABC'] },
+        },
       }
       const result = detectConnectionMode(false, null, v2Session)
       expect(result).toBe('v2')
@@ -80,8 +80,8 @@ describe('Connection Detection Utilities', () => {
       const v1Session = { topic: 'v1', namespaces: {} }
       const v2Session = {
         namespaces: {
-          hedera: { accounts: ['hedera:testnet:0.0.123'] }
-        }
+          hedera: { accounts: ['hedera:testnet:0.0.123'] },
+        },
       }
       const result = detectConnectionMode(true, v1Session, v2Session)
       expect(result).toBe('v2')
@@ -98,8 +98,8 @@ describe('Connection Detection Utilities', () => {
     it('should return "hedera" for hedera namespace', () => {
       const session = {
         namespaces: {
-          hedera: { accounts: [] }
-        }
+          hedera: { accounts: [] },
+        },
       }
       expect(getV2Namespace(session)).toBe('hedera')
     })
@@ -107,8 +107,8 @@ describe('Connection Detection Utilities', () => {
     it('should return "eip155" for eip155 namespace', () => {
       const session = {
         namespaces: {
-          eip155: { accounts: [] }
-        }
+          eip155: { accounts: [] },
+        },
       }
       expect(getV2Namespace(session)).toBe('eip155')
     })
@@ -123,8 +123,8 @@ describe('Connection Detection Utilities', () => {
       const session = {
         namespaces: {
           hedera: { accounts: [] },
-          eip155: { accounts: [] }
-        }
+          eip155: { accounts: [] },
+        },
       }
       expect(getV2Namespace(session)).toBe('hedera')
     })
@@ -141,7 +141,7 @@ describe('Connection Detection Utilities', () => {
 
     it('should return false for session with v2 namespaces', () => {
       const v2Session = {
-        namespaces: { hedera: { accounts: [] } }
+        namespaces: { hedera: { accounts: [] } },
       }
       expect(isV1Session(v2Session)).toBe(false)
     })
@@ -155,14 +155,14 @@ describe('Connection Detection Utilities', () => {
   describe('isV2Session', () => {
     it('should return true for hedera namespace', () => {
       const session = {
-        namespaces: { hedera: { accounts: [] } }
+        namespaces: { hedera: { accounts: [] } },
       }
       expect(isV2Session(session)).toBe(true)
     })
 
     it('should return true for eip155 namespace', () => {
       const session = {
-        namespaces: { eip155: { accounts: [] } }
+        namespaces: { eip155: { accounts: [] } },
       }
       expect(isV2Session(session)).toBe(true)
     })
@@ -171,8 +171,8 @@ describe('Connection Detection Utilities', () => {
       const session = {
         namespaces: {
           hedera: { accounts: [] },
-          eip155: { accounts: [] }
-        }
+          eip155: { accounts: [] },
+        },
       }
       expect(isV2Session(session)).toBe(true)
     })
@@ -189,9 +189,9 @@ describe('Connection Detection Utilities', () => {
 
     it('should return false for other namespaces', () => {
       const session = {
-        namespaces: { 
-          solana: { accounts: [] } // Not hedera or eip155
-        }
+        namespaces: {
+          solana: { accounts: [] }, // Not hedera or eip155
+        },
       }
       expect(isV2Session(session)).toBe(false)
     })
@@ -205,23 +205,23 @@ describe('Edge Cases', () => {
       // Start with no connection
       let mode = detectConnectionMode(false, null, null)
       expect(mode).toBe('none')
-      
+
       // Connect v1
       const v1Session = { topic: 'v1', namespaces: {} }
       mode = detectConnectionMode(true, v1Session, null)
       expect(mode).toBe('v1')
-      
+
       // Immediately connect v2 (should override)
       const v2Session = {
-        namespaces: { hedera: { accounts: [] } }
+        namespaces: { hedera: { accounts: [] } },
       }
       mode = detectConnectionMode(true, v1Session, v2Session)
       expect(mode).toBe('v2')
-      
+
       // Disconnect v2 (falls back to v1)
       mode = detectConnectionMode(true, v1Session, null)
       expect(mode).toBe('v1')
-      
+
       // Disconnect all
       mode = detectConnectionMode(false, null, null)
       expect(mode).toBe('none')
@@ -234,8 +234,8 @@ describe('Edge Cases', () => {
       const mixedSession = {
         namespaces: {
           hedera: { accounts: [] },
-          unknown: { accounts: [] }
-        }
+          unknown: { accounts: [] },
+        },
       }
       expect(getV2Namespace(mixedSession)).toBe('hedera')
       expect(isV2Session(mixedSession)).toBe(true)
@@ -245,8 +245,8 @@ describe('Edge Cases', () => {
       const corruptedSession = {
         namespaces: {
           hedera: null, // Corrupted data
-          eip155: { accounts: [] }
-        }
+          eip155: { accounts: [] },
+        },
       }
       expect(getV2Namespace(corruptedSession)).toBe('eip155')
       expect(isV2Session(corruptedSession)).toBe(true)

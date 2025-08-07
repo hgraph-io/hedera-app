@@ -5,27 +5,34 @@ interface V2ConnectionOptionsProps {
 }
 
 export function V2ConnectionOptions({ onConnect }: V2ConnectionOptionsProps) {
-  const [selectedNamespace, setSelectedNamespace] = useState<'hedera' | 'eip155' | 'both'>('hedera')
+  const [selectedNamespace, setSelectedNamespace] = useState<'hedera' | 'eip155' | 'both'>(
+    'hedera',
+  )
 
   return (
-    <div className="v2-connection-options" style={{
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '15px',
-      padding: '15px',
-      backgroundColor: '#f5f5f5',
-      borderRadius: '8px',
-      marginBottom: '20px',
-    }}>
+    <div
+      className="v2-connection-options"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '15px',
+        padding: '15px',
+        backgroundColor: '#f5f5f5',
+        borderRadius: '8px',
+        marginBottom: '20px',
+      }}
+    >
       <h3 style={{ margin: 0, fontSize: '16px' }}>HWC v2 Connection Options</h3>
-      
+
       <div style={{ display: 'flex', gap: '10px', flexDirection: 'column' }}>
-        <label style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          cursor: 'pointer',
-        }}>
+        <label
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            cursor: 'pointer',
+          }}
+        >
           <input
             type="radio"
             name="namespace"
@@ -40,13 +47,15 @@ export function V2ConnectionOptions({ onConnect }: V2ConnectionOptionsProps) {
             </div>
           </div>
         </label>
-        
-        <label style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          cursor: 'pointer',
-        }}>
+
+        <label
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            cursor: 'pointer',
+          }}
+        >
           <input
             type="radio"
             name="namespace"
@@ -61,13 +70,15 @@ export function V2ConnectionOptions({ onConnect }: V2ConnectionOptionsProps) {
             </div>
           </div>
         </label>
-        
-        <label style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          cursor: 'pointer',
-        }}>
+
+        <label
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            cursor: 'pointer',
+          }}
+        >
           <input
             type="radio"
             name="namespace"
@@ -83,7 +94,7 @@ export function V2ConnectionOptions({ onConnect }: V2ConnectionOptionsProps) {
           </div>
         </label>
       </div>
-      
+
       <button
         onClick={() => onConnect(selectedNamespace)}
         style={{
@@ -96,7 +107,8 @@ export function V2ConnectionOptions({ onConnect }: V2ConnectionOptionsProps) {
           fontSize: '16px',
         }}
       >
-        Connect with HWC v2 ({selectedNamespace === 'both' ? 'hedera + eip155' : selectedNamespace})
+        Connect with HWC v2 (
+        {selectedNamespace === 'both' ? 'hedera + eip155' : selectedNamespace})
       </button>
     </div>
   )

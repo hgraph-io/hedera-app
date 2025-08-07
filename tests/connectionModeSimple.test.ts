@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { 
-  detectConnectionMode, 
-  getV2Namespace, 
-  isV1Session, 
-  isV2Session 
+import {
+  detectConnectionMode,
+  getV2Namespace,
+  isV1Session,
+  isV2Session,
 } from './utils/connectionDetection.test'
 
 describe('Connection Mode Detection - Simple Tests', () => {
@@ -25,9 +25,9 @@ describe('Connection Mode Detection - Simple Tests', () => {
           hedera: {
             accounts: ['hedera:testnet:0.0.12345'],
             methods: ['hedera_signMessage'],
-            events: []
-          }
-        }
+            events: [],
+          },
+        },
       }
       const mode = detectConnectionMode(false, null, v2Session)
       expect(mode).toBe('v2')
@@ -40,9 +40,9 @@ describe('Connection Mode Detection - Simple Tests', () => {
           eip155: {
             accounts: ['eip155:296:0xABCDEF'],
             methods: ['eth_sendTransaction'],
-            events: []
-          }
-        }
+            events: [],
+          },
+        },
       }
       const mode = detectConnectionMode(false, null, v2Session)
       expect(mode).toBe('v2')
@@ -53,8 +53,8 @@ describe('Connection Mode Detection - Simple Tests', () => {
       const v1Session = { topic: 'v1', namespaces: {} }
       const v2Session = {
         namespaces: {
-          hedera: { accounts: ['hedera:testnet:0.0.12345'] }
-        }
+          hedera: { accounts: ['hedera:testnet:0.0.12345'] },
+        },
       }
       const mode = detectConnectionMode(true, v1Session, v2Session)
       expect(mode).toBe('v2')
@@ -65,18 +65,24 @@ describe('Connection Mode Detection - Simple Tests', () => {
     it('should identify v1 sessions correctly', () => {
       expect(isV1Session({ topic: 'v1' })).toBe(true)
       expect(isV1Session({ topic: 'v1', namespaces: {} })).toBe(true)
-      expect(isV1Session({ 
-        namespaces: { hedera: { accounts: [] } } 
-      })).toBe(false)
+      expect(
+        isV1Session({
+          namespaces: { hedera: { accounts: [] } },
+        }),
+      ).toBe(false)
     })
 
     it('should identify v2 sessions correctly', () => {
-      expect(isV2Session({ 
-        namespaces: { hedera: { accounts: [] } } 
-      })).toBe(true)
-      expect(isV2Session({ 
-        namespaces: { eip155: { accounts: [] } } 
-      })).toBe(true)
+      expect(
+        isV2Session({
+          namespaces: { hedera: { accounts: [] } },
+        }),
+      ).toBe(true)
+      expect(
+        isV2Session({
+          namespaces: { eip155: { accounts: [] } },
+        }),
+      ).toBe(true)
       expect(isV2Session({ topic: 'v1' })).toBe(false)
       expect(isV2Session({ namespaces: {} })).toBe(false)
     })
@@ -90,20 +96,20 @@ describe('Connection Mode Detection - Simple Tests', () => {
           v1Connected: true,
           v1Session: { topic: 'any' },
           v2Session: { namespaces: { hedera: { accounts: ['test'] } } },
-          expected: 'v2'
+          expected: 'v2',
         },
         {
           v1Connected: true,
           v1Session: { topic: 'any' },
           v2Session: { namespaces: { eip155: { accounts: ['test'] } } },
-          expected: 'v2'
+          expected: 'v2',
         },
         {
           v1Connected: false,
           v1Session: null,
           v2Session: { namespaces: { hedera: { accounts: ['test'] } } },
-          expected: 'v2'
-        }
+          expected: 'v2',
+        },
       ]
 
       scenarios.forEach(({ v1Connected, v1Session, v2Session, expected }) => {
@@ -117,8 +123,8 @@ describe('Connection Mode Detection - Simple Tests', () => {
       const dualNamespaceSession = {
         namespaces: {
           hedera: { accounts: ['hedera:testnet:0.0.123'] },
-          eip155: { accounts: ['eip155:296:0xABC'] }
-        }
+          eip155: { accounts: ['eip155:296:0xABC'] },
+        },
       }
       expect(getV2Namespace(dualNamespaceSession)).toBe('hedera')
     })

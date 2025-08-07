@@ -43,7 +43,7 @@ describe('ConnectionWrapper', () => {
     render(
       <ConnectionWrapper>
         <div>Test Child</div>
-      </ConnectionWrapper>
+      </ConnectionWrapper>,
     )
 
     expect(screen.getByText('Test Child')).toBeInTheDocument()
@@ -57,7 +57,7 @@ describe('ConnectionWrapper', () => {
     render(
       <ConnectionWrapper>
         <div>Test Child</div>
-      </ConnectionWrapper>
+      </ConnectionWrapper>,
     )
 
     // Wait for async validation to complete
@@ -81,7 +81,7 @@ describe('ConnectionWrapper', () => {
     render(
       <ConnectionWrapper>
         <div>Test Child</div>
-      </ConnectionWrapper>
+      </ConnectionWrapper>,
     )
 
     // Wait for async validation to complete
@@ -106,7 +106,7 @@ describe('ConnectionWrapper', () => {
       value: { reload: mockReload },
       writable: true,
     })
-    
+
     mockUseAppKitAccount.mockReturnValue({ isConnected: true, address: '0x123' })
     mockUseAppKitState.mockReturnValue({ open: false })
     mockRequest.mockRejectedValue(mockError)
@@ -114,7 +114,7 @@ describe('ConnectionWrapper', () => {
     render(
       <ConnectionWrapper onConnectionError={mockOnConnectionError}>
         <div>Test Child</div>
-      </ConnectionWrapper>
+      </ConnectionWrapper>,
     )
 
     // Wait for async validation to complete
@@ -122,14 +122,13 @@ describe('ConnectionWrapper', () => {
 
     expect(mockOnConnectionError).toHaveBeenCalledWith(mockError)
     expect(screen.getByText('Refreshing connection...')).toBeInTheDocument()
-    
+
     // Advance timer to trigger reload
     vi.advanceTimersByTime(1000)
 
     expect(mockReload).toHaveBeenCalled()
     expect(sessionStorage.getItem('connectionRefreshAttempts')).toBe('1')
   })
-
 
   it('does not validate when modal is open', async () => {
     mockUseAppKitAccount.mockReturnValue({ isConnected: true, address: '0x123' })
@@ -138,7 +137,7 @@ describe('ConnectionWrapper', () => {
     render(
       <ConnectionWrapper>
         <div>Test Child</div>
-      </ConnectionWrapper>
+      </ConnectionWrapper>,
     )
 
     // Run any pending timers
@@ -165,7 +164,7 @@ describe('ConnectionWrapper', () => {
     render(
       <ConnectionWrapper>
         <div>Test Child</div>
-      </ConnectionWrapper>
+      </ConnectionWrapper>,
     )
 
     // Wait for async validation
@@ -173,7 +172,7 @@ describe('ConnectionWrapper', () => {
 
     // Should show refreshing and increment attempts
     expect(screen.getByText('Refreshing connection...')).toBeInTheDocument()
-    
+
     // Advance timer to trigger reload
     vi.advanceTimersByTime(1000)
 
@@ -199,7 +198,7 @@ describe('ConnectionWrapper', () => {
     render(
       <ConnectionWrapper>
         <div>Test Child</div>
-      </ConnectionWrapper>
+      </ConnectionWrapper>,
     )
 
     // Wait for async validation
@@ -207,14 +206,16 @@ describe('ConnectionWrapper', () => {
 
     // Should show refreshing but NOT reload
     expect(screen.getByText('Refreshing connection...')).toBeInTheDocument()
-    
+
     // Advance timer - should not trigger reload
     vi.advanceTimersByTime(1000)
 
     expect(mockReload).not.toHaveBeenCalled()
-    expect(consoleErrorSpy).toHaveBeenCalledWith('Max refresh attempts reached. Please manually reconnect.')
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Max refresh attempts reached. Please manually reconnect.',
+    )
     expect(sessionStorage.getItem('connectionRefreshAttempts')).toBeNull()
-    
+
     consoleErrorSpy.mockRestore()
   })
 })

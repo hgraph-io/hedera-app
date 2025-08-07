@@ -10,56 +10,12 @@ import { SessionMonitor } from './utils/sessionMonitor'
 import { useDAppConnectorV1 } from './hooks/useDAppConnectorV1'
 import { useV1Methods } from './hooks/useV1Methods'
 import './utils/debug'
+import { projectId, metadata, networks, universalProvider } from './config'
 import {
-  projectId,
-  metadata,
-  networks,
-  nativeHederaAdapter,
-  eip155HederaAdapter,
-  universalProvider,
-} from './config'
-import { HederaChainDefinition } from '@hashgraph/hedera-wallet-connect'
-
-// Create modal for V2 with both adapters
-console.log('📦 V2 AppKit Configuration:', {
-  adapters: [
-    {
-      namespace: 'hedera',
-      namespaceMode: 'required',
-      networks: ['testnet', 'mainnet'],
-    },
-    {
-      namespace: 'eip155',
-      namespaceMode: 'required',
-      networks: ['296', '295'],
-    },
-  ],
-  defaultNetwork: 'hedera:testnet',
-})
-
-createAppKit({
-  adapters: [nativeHederaAdapter, eip155HederaAdapter],
-  universalProvider,
-  defaultNetwork: HederaChainDefinition.Native.Testnet,
-  projectId,
-  metadata,
-  networks,
-  themeMode: 'light' as const,
-  enableReconnect: true,
-  features: {
-    analytics: true,
-    socials: false,
-    swaps: false,
-    onramp: false,
-    email: false,
-  },
-  chainImages: {
-    'hedera:testnet': '/hedera.svg',
-    'hedera:mainnet': '/hedera.svg',
-    'eip155:296': '/hedera.svg',
-    'eip155:295': '/hedera.svg',
-  },
-})
+  HederaChainDefinition,
+  HederaAdapter,
+  hederaNamespace,
+} from '@hashgraph/hedera-wallet-connect'
 
 export interface FunctionResult {
   functionName: string
@@ -68,9 +24,11 @@ export interface FunctionResult {
 
 type ConnectionMode = 'none' | 'v1' | 'v2'
 
-export function App() {
-  const { disconnect: disconnectV2 } = useDisconnect()
-  const { open } = useAppKit()
+export function AppWithDynamicAdapters() {
+  const [modalCreated, setModalCreated] = useState(false)
+  const [selectedNamespace, setSelectedNamespace] = useState<
+    'hedera' | 'eip155' | 'both' | null
+  >(null)
   const [transactionHash, setTransactionHash] = useState('')
   const [transactionId, setTransactionId] = useState('')
   const [signedMsg, setSignedMsg] = useState('')
@@ -80,6 +38,10 @@ export function App() {
   const [showV1Modal, setShowV1Modal] = useState(false)
   const [showV2NamespaceModal, setShowV2NamespaceModal] = useState(false)
   const sessionMonitor = useRef(new SessionMonitor(universalProvider))
+
+  // Conditionally use hooks only after modal is created
+  const disconnectV2 = modalCreated ? useDisconnect().disconnect : undefined
+  const open = modalCreated ? useAppKit().open : undefined
 
   // V1 connection state
   const v1Connection = useDAppConnectorV1()
@@ -97,83 +59,110 @@ export function App() {
     setLastFunctionResult(null)
   }
 
-  // Handle V2 connection with namespace selection
-  const handleV2Connect = async (namespace: 'hedera' | 'eip155' | 'both') => {
-    console.log('🔗 V2 Connection: User selected namespace:', namespace)
+  // Create modal dynamically based on selected namespace
+  const createModalWithNamespace = (namespace: 'hedera' | 'eip155' | 'both') => {
+    console.log('🔗 V2 Connection: Creating modal with namespace:', namespace)
 
-    // Store the selected namespace in session storage for reference
-    sessionStorage.setItem('selectedHWCv2Namespace', namespace)
+    // Determine which adapters to use based on selection
+    let adapters: HederaAdapter[] = []
+    let defaultNetwork = HederaChainDefinition.Native.Testnet
 
-    // Configure the connection options based on namespace selection
-    const hederaMethods = [
-      'hedera_getAccountBalance',
-      'hedera_getAccountInfo',
-      'hedera_getTransactionReceipt',
-      'hedera_executeTransaction',
-      'hedera_signMessage',
-      'hedera_signTransaction',
-      'hedera_signAndExecuteTransaction',
-      'hedera_signAndExecuteQuery',
-    ]
-
-    const eip155Methods = [
-      'eth_sendTransaction',
-      'eth_signTransaction',
-      'eth_sign',
-      'personal_sign',
-      'eth_signTypedData',
-      'eth_signTypedData_v4',
-      'eth_accounts',
-      'eth_chainId',
-    ]
-
-    const connectionOptions = {
-      requiredNamespaces:
-        namespace === 'both'
-          ? {
-              hedera: {
-                methods: hederaMethods,
-                chains: ['hedera:testnet', 'hedera:mainnet'],
-                events: ['chainChanged', 'accountsChanged'],
-              },
-              eip155: {
-                methods: eip155Methods,
-                chains: ['eip155:296', 'eip155:295'],
-                events: ['chainChanged', 'accountsChanged'],
-              },
-            }
-          : namespace === 'hedera'
-            ? {
-                hedera: {
-                  methods: hederaMethods,
-                  chains: ['hedera:testnet', 'hedera:mainnet'],
-                  events: ['chainChanged', 'accountsChanged'],
-                },
-              }
-            : {
-                eip155: {
-                  methods: eip155Methods,
-                  chains: ['eip155:296', 'eip155:295'],
-                  events: ['chainChanged', 'accountsChanged'],
-                },
-              },
+    if (namespace === 'hedera') {
+      // Only use hedera adapter with required namespaces
+      console.log('📦 V2 Configuration: Using hedera adapter only with required mode')
+      adapters = [
+        new HederaAdapter({
+          projectId,
+          networks: [
+            HederaChainDefinition.Native.Testnet,
+            HederaChainDefinition.Native.Mainnet,
+          ],
+          namespace: hederaNamespace,
+          namespaceMode: 'required', // Force required mode
+        }),
+      ]
+      defaultNetwork = HederaChainDefinition.Native.Testnet
+    } else if (namespace === 'eip155') {
+      // Only use eip155 adapter
+      console.log('📦 V2 Configuration: Using eip155 adapter only with required mode')
+      adapters = [
+        new HederaAdapter({
+          projectId,
+          networks: [HederaChainDefinition.EVM.Testnet, HederaChainDefinition.EVM.Mainnet],
+          namespace: 'eip155',
+          namespaceMode: 'required',
+        }),
+      ]
+      defaultNetwork = HederaChainDefinition.EVM.Testnet
+    } else {
+      // Use both adapters
+      console.log(
+        '📦 V2 Configuration: Using both hedera and eip155 adapters with required mode',
+      )
+      adapters = [
+        new HederaAdapter({
+          projectId,
+          networks: [
+            HederaChainDefinition.Native.Testnet,
+            HederaChainDefinition.Native.Mainnet,
+          ],
+          namespace: hederaNamespace,
+          namespaceMode: 'required',
+        }),
+        new HederaAdapter({
+          projectId,
+          networks: [HederaChainDefinition.EVM.Testnet, HederaChainDefinition.EVM.Mainnet],
+          namespace: 'eip155',
+          namespaceMode: 'required',
+        }),
+      ]
     }
 
-    // Store connection options for the modal to use
-    sessionStorage.setItem('hwcV2ConnectionOptions', JSON.stringify(connectionOptions))
-
-    console.log('📋 V2 Connection Options:', connectionOptions)
-    console.log('🚀 Opening V2 modal with both adapters configured')
-
-    // Open the modal with the appropriate network
-    await open({
-      view: 'Connect',
+    // Create the modal with selected adapters
+    createAppKit({
+      adapters,
+      universalProvider,
+      defaultNetwork,
+      projectId,
+      metadata,
+      networks,
+      themeMode: 'light' as const,
+      enableReconnect: true,
+      features: {
+        analytics: true,
+        socials: false,
+        swaps: false,
+        onramp: false,
+        email: false,
+      },
+      chainImages: {
+        'hedera:testnet': '/hedera.svg',
+        'hedera:mainnet': '/hedera.svg',
+        'eip155:296': '/hedera.svg',
+        'eip155:295': '/hedera.svg',
+      },
     })
+
+    setModalCreated(true)
+    setSelectedNamespace(namespace)
   }
 
-  // Track connection mode - check v2 first since universalProvider might be shared
+  // Handle V2 connection with namespace selection
+  const handleV2Connect = async (namespace: 'hedera' | 'eip155' | 'both') => {
+    // Store the selected namespace
+    sessionStorage.setItem('selectedHWCv2Namespace', namespace)
+
+    // Create modal with appropriate adapters
+    createModalWithNamespace(namespace)
+
+    // Small delay to ensure modal is created
+    setTimeout(() => {
+      open({ view: 'Connect' })
+    }, 100)
+  }
+
+  // Track connection mode
   useEffect(() => {
-    // Check v2 connection first (universalProvider with namespaces)
     if (
       universalProvider.session &&
       (universalProvider.session.namespaces?.hedera ||
@@ -205,10 +194,8 @@ export function App() {
         eip155Events: universalProvider.session.namespaces?.eip155?.events,
       })
 
-      // This is definitely a v2 connection
       setConnectionMode('v2')
     } else if (v1Connection.isConnected && v1Connection.session) {
-      // This is a v1 connection
       setConnectionMode('v1')
     } else {
       setConnectionMode('none')
@@ -240,7 +227,6 @@ export function App() {
       if (connectionMode === 'v1') {
         await v1Connection.disconnect()
       } else if (connectionMode === 'v2') {
-        // Clear v2 namespace marker
         sessionStorage.removeItem('selectedHWCv2Namespace')
         sessionStorage.removeItem('hwcV2ConnectionOptions')
 
@@ -254,6 +240,10 @@ export function App() {
         ) {
           await disconnectV2()
         }
+
+        // Reset modal state
+        setModalCreated(false)
+        setSelectedNamespace(null)
       }
 
       clearState()
@@ -265,43 +255,10 @@ export function App() {
       }
       clearState()
       setConnectionMode('none')
+      setModalCreated(false)
+      setSelectedNamespace(null)
     }
   }
-
-  // V2 session events
-  useEffect(() => {
-    if (connectionMode !== 'v2') return
-
-    universalProvider.on('session_delete', handleDisconnect)
-    universalProvider.client.core?.pairing.events?.on(
-      'pairing_delete',
-      handleDisconnect as (event: unknown) => void,
-    )
-
-    return () => {
-      universalProvider.off('session_delete', handleDisconnect)
-      universalProvider.client.core?.pairing.events?.off(
-        'pairing_delete',
-        handleDisconnect as (event: unknown) => void,
-      )
-    }
-  }, [disconnectV2, connectionMode])
-
-  // Error boundary for session errors
-  useEffect(() => {
-    const handleError = (event: ErrorEvent) => {
-      if (event.error?.message?.includes('Cannot read properties of undefined')) {
-        console.error('WalletConnect internal error detected')
-        if (connectionMode === 'v2') {
-          sessionMonitor.current.cleanupInvalidSessions()
-        }
-        clearState()
-      }
-    }
-
-    window.addEventListener('error', handleError)
-    return () => window.removeEventListener('error', handleError)
-  }, [connectionMode])
 
   // V1 method handlers
   const handleV1Transfer = async () => {
@@ -325,7 +282,6 @@ export function App() {
     try {
       const message = 'Hello from V1 - ' + new Date().toISOString()
       const signature = await v1Methods.signMessage(message)
-      // Convert signature to hex string
       const hexSignature =
         typeof signature === 'string'
           ? signature
@@ -385,7 +341,7 @@ export function App() {
           <img src="/reown.svg" alt="Reown" style={{ width: '150px', height: '150px' }} />
           <img src="/hedera.svg" alt="Hedera" style={{ width: '90px', height: '90px' }} />
         </div>
-        <h1>Hedera App with HWC v1 & v2 Support</h1>
+        <h1>Hedera App with Dynamic Adapter Selection</h1>
 
         {/* Connection Status */}
         <div
@@ -409,7 +365,8 @@ export function App() {
           {connectionMode === 'v2' && (
             <p>
               <strong>
-                Connected via HWC v2 ({getCurrentV2Namespace() || 'unknown'} namespace)
+                Connected via HWC v2 (
+                {getCurrentV2Namespace() || selectedNamespace || 'unknown'} namespace)
               </strong>
               {universalProvider.session?.namespaces?.hedera && (
                 <>
@@ -468,6 +425,26 @@ export function App() {
             >
               Connect with HWC v2
             </button>
+          </div>
+        )}
+
+        {/* Debug info when modal is created */}
+        {modalCreated && connectionMode === 'none' && (
+          <div
+            style={{
+              padding: '10px',
+              backgroundColor: '#fff3cd',
+              border: '1px solid #ffc107',
+              borderRadius: '4px',
+              marginBottom: '20px',
+            }}
+          >
+            <p style={{ margin: 0, fontSize: '14px' }}>
+              <strong>Debug:</strong> Modal created with {selectedNamespace} namespace
+              adapter(s).
+              {selectedNamespace === 'hedera' &&
+                ' Using required mode to force hedera namespace.'}
+            </p>
           </div>
         )}
 
@@ -552,4 +529,4 @@ export function App() {
   )
 }
 
-export default App
+export default AppWithDynamicAdapters

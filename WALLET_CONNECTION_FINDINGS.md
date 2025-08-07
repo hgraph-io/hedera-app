@@ -3,6 +3,7 @@
 ## Issue Summary
 
 The client is experiencing intermittent connection issues where:
+
 1. An error occurs during wallet connection/disconnection (shown in console)
 2. UI shows as connected but HashPack extension shows 0 connections
 3. The issue happens randomly and cannot be reliably reproduced
@@ -11,24 +12,32 @@ The client is experiencing intermittent connection issues where:
 ## Root Cause Analysis
 
 ### 1. Session State Synchronization Issue
-The error appears to be a race condition in the WalletConnect library when handling extension connections. The specific error "Cannot read properties of undefined" at line 290 (`connectExtension`) suggests internal WalletConnect state corruption.
+
+The error appears to be a race condition in the WalletConnect library when handling extension
+connections. The specific error "Cannot read properties of undefined" at line 290
+(`connectExtension`) suggests internal WalletConnect state corruption.
 
 ### 2. Current Implementation Issues
 
 #### In Client's Code:
-- **Optimistic State Updates**: Setting `sessionState = "connected"` before verifying connection success
+
+- **Optimistic State Updates**: Setting `sessionState = "connected"` before verifying connection
+  success
 - **Missing Session Validation**: No verification that extension connection actually succeeded
 - **Incomplete Error Handling**: Not catching WalletConnect internal errors properly
 - **No Connection Mutex**: Multiple concurrent connection attempts possible
 
 #### In hedera-app Demo:
+
 - Uses AppKit's built-in connection management
 - Relies on `session_delete` and `pairing_delete` events for cleanup
 - No explicit session validation before operations
 - No recovery mechanism for corrupted sessions
 
 ### 3. Library-Level Issues
+
 The `connectExtension` method in hedera-wallet-connect library:
+
 - Doesn't validate extension state before attempting connection
 - No timeout handling for hanging connections
 - Limited error recovery for internal WalletConnect failures
@@ -36,6 +45,7 @@ The `connectExtension` method in hedera-wallet-connect library:
 ## Recommendations for hedera-app
 
 ### 1. Add Session State Monitor
+
 Create a new utility for monitoring and validating session state:
 
 ```typescript
@@ -45,32 +55,29 @@ import { UniversalProvider } from '@walletconnect/universal-provider'
 export class SessionMonitor {
   private provider: UniversalProvider
   private isValidating = false
-  
+
   constructor(provider: UniversalProvider) {
     this.provider = provider
   }
-  
+
   async validateSession(): Promise<boolean> {
     if (this.isValidating) return false
-    
+
     try {
       this.isValidating = true
-      
+
       // Check if session exists
       if (!this.provider.session) return false
-      
+
       // Check if session is expired
       const session = this.provider.session
       if (session.expiry && new Date(session.expiry * 1000) < new Date()) {
         return false
       }
-      
+
       // Check if we have valid namespaces
-      const hasValidNamespaces = !!(
-        session.namespaces?.hedera || 
-        session.namespaces?.eip155
-      )
-      
+      const hasValidNamespaces = !!(session.namespaces?.hedera || session.namespaces?.eip155)
+
       return hasValidNamespaces
     } catch (error) {
       console.error('Session validation failed:', error)
@@ -79,17 +86,15 @@ export class SessionMonitor {
       this.isValidating = false
     }
   }
-  
+
   async cleanupInvalidSessions() {
     try {
       // Clear WalletConnect storage
-      const wcKeys = Object.keys(localStorage).filter(key => 
-        key.startsWith('wc@') || 
-        key.startsWith('walletconnect') ||
-        key.includes('WC')
+      const wcKeys = Object.keys(localStorage).filter(
+        (key) => key.startsWith('wc@') || key.startsWith('walletconnect') || key.includes('WC'),
       )
-      wcKeys.forEach(key => localStorage.removeItem(key))
-      
+      wcKeys.forEach((key) => localStorage.removeItem(key))
+
       // Disconnect any existing sessions
       if (this.provider.session) {
         await this.provider.disconnect()
@@ -102,6 +107,7 @@ export class SessionMonitor {
 ```
 
 ### 2. Enhanced App.tsx with Session Recovery
+
 Update the main App component with better error handling:
 
 ```typescript
@@ -121,11 +127,11 @@ useEffect(() => {
       clearState()
     }
   }
-  
+
   // Validate on mount and periodically
   validateAndRecover()
   const interval = setInterval(validateAndRecover, 30000) // Every 30 seconds
-  
+
   return () => clearInterval(interval)
 }, [])
 
@@ -134,14 +140,14 @@ const handleDisconnect = async () => {
   try {
     // Validate session before disconnect
     const isValid = await sessionMonitor.current.validateSession()
-    
+
     if (!isValid) {
       // Force cleanup if session is invalid
       await sessionMonitor.current.cleanupInvalidSessions()
     } else if (universalProvider.session?.namespaces?.eip155) {
       await disconnect()
     }
-    
+
     clearState()
   } catch (error) {
     console.error('Disconnect error:', error)
@@ -160,13 +166,14 @@ useEffect(() => {
       clearState()
     }
   }
-  
+
   window.addEventListener('error', handleError)
   return () => window.removeEventListener('error', handleError)
 }, [])
 ```
 
 ### 3. Connection Wrapper Component
+
 Create a wrapper to handle connection state:
 
 ```typescript
@@ -184,7 +191,7 @@ export function ConnectionWrapper({ children, onConnectionError }: ConnectionWra
   const { isConnected } = useAppKitAccount()
   const { open } = useAppKitState()
   const [isValidConnection, setIsValidConnection] = useState(true)
-  
+
   useEffect(() => {
     const checkConnection = async () => {
       if (isConnected && !open) {
@@ -201,10 +208,10 @@ export function ConnectionWrapper({ children, onConnectionError }: ConnectionWra
         }
       }
     }
-    
+
     checkConnection()
   }, [isConnected, open, onConnectionError])
-  
+
   if (isConnected && !isValidConnection) {
     return (
       <div className="connection-error">
@@ -213,12 +220,13 @@ export function ConnectionWrapper({ children, onConnectionError }: ConnectionWra
       </div>
     )
   }
-  
+
   return <>{children}</>
 }
 ```
 
 ### 4. Update ActionButtonList Component
+
 Add connection validation before method execution:
 
 ```typescript
@@ -239,7 +247,7 @@ const executeMethod = async (methodName: string, params: Record<string, string>)
         return
       }
     }
-    
+
     // ... rest of the existing code
   } catch (error) {
     // ... existing error handling
@@ -248,6 +256,7 @@ const executeMethod = async (methodName: string, params: Record<string, string>)
 ```
 
 ### 5. Add Debug Utilities
+
 Create debugging helpers:
 
 ```typescript
@@ -255,21 +264,22 @@ Create debugging helpers:
 export const debugWalletState = () => {
   const universalProvider = (window as any).universalProvider
   const appKitState = (window as any).__REOWN_APPKIT_STATE__
-  
+
   console.group('Wallet Debug Info')
   console.log('Provider Session:', universalProvider?.session)
   console.log('AppKit State:', appKitState)
-  console.log('LocalStorage WC Keys:', 
-    Object.keys(localStorage).filter(k => 
-      k.includes('wallet') || k.includes('wc') || k.includes('WC')
-    )
+  console.log(
+    'LocalStorage WC Keys:',
+    Object.keys(localStorage).filter(
+      (k) => k.includes('wallet') || k.includes('wc') || k.includes('WC'),
+    ),
   )
   console.groupEnd()
 }
 
 // Make it globally available
 if (typeof window !== 'undefined') {
-  (window as any).debugWallet = debugWalletState
+  ;(window as any).debugWallet = debugWalletState
 }
 ```
 
@@ -297,10 +307,12 @@ if (typeof window !== 'undefined') {
 ## Notes for Client's Implementation
 
 The client's code needs these critical fixes:
+
 1. Add mutex to prevent concurrent connections
 2. Verify connection success before setting state
 3. Implement proper timeout handling
 4. Add session validation before operations
 5. Implement force cleanup on errors
 
-These recommendations should significantly improve connection stability and provide better error recovery mechanisms.
+These recommendations should significantly improve connection stability and provide better error
+recovery mechanisms.

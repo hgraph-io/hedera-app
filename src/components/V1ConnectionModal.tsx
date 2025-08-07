@@ -10,13 +10,13 @@ interface V1ConnectionModalProps {
   onRefreshExtensions?: () => void
 }
 
-export function V1ConnectionModal({ 
-  isOpen, 
-  onClose, 
-  onConnect, 
+export function V1ConnectionModal({
+  isOpen,
+  onClose,
+  onConnect,
   availableExtensions,
   isDetectingExtensions = false,
-  onRefreshExtensions 
+  onRefreshExtensions,
 }: V1ConnectionModalProps) {
   const [isConnecting, setIsConnecting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -34,7 +34,7 @@ export function V1ConnectionModal({
   const handleQRConnection = async () => {
     setIsConnecting(true)
     setError(null)
-    
+
     try {
       const success = await onConnect()
       if (success) {
@@ -52,7 +52,7 @@ export function V1ConnectionModal({
   const handleExtensionConnection = async (extension: ExtensionData) => {
     setIsConnecting(true)
     setError(null)
-    
+
     try {
       const success = await onConnect([extension])
       if (success) {
@@ -70,21 +70,27 @@ export function V1ConnectionModal({
   if (!isOpen) return null
 
   return (
-    <div className="modal-overlay" onClick={(e) => {
-      if (e.target === e.currentTarget) onClose()
-    }}>
+    <div
+      className="modal-overlay"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose()
+      }}
+    >
       <div className="modal-content v1-connection-modal">
         <h2>Connect with HWC v1</h2>
-        
+
         {error && (
-          <div className="error-message" style={{ 
-            color: 'red', 
-            padding: '10px', 
-            marginBottom: '10px',
-            border: '1px solid red',
-            borderRadius: '4px',
-            backgroundColor: '#ffebee'
-          }}>
+          <div
+            className="error-message"
+            style={{
+              color: 'red',
+              padding: '10px',
+              marginBottom: '10px',
+              border: '1px solid red',
+              borderRadius: '4px',
+              backgroundColor: '#ffebee',
+            }}
+          >
             {error}
           </div>
         )}
@@ -92,12 +98,15 @@ export function V1ConnectionModal({
         <div className="extensions-section" style={{ marginBottom: '20px' }}>
           <h3>Browser Extensions</h3>
           {isDetectingExtensions ? (
-            <div className="extensions-loading" style={{
-              padding: '20px',
-              textAlign: 'center',
-              color: '#666',
-              fontStyle: 'italic',
-            }}>
+            <div
+              className="extensions-loading"
+              style={{
+                padding: '20px',
+                textAlign: 'center',
+                color: '#666',
+                fontStyle: 'italic',
+              }}
+            >
               Detecting browser extensions...
             </div>
           ) : availableExtensions.length > 0 ? (
@@ -122,9 +131,9 @@ export function V1ConnectionModal({
                   }}
                 >
                   {ext.icon && (
-                    <img 
-                      src={ext.icon} 
-                      alt={ext.name} 
+                    <img
+                      src={ext.icon}
+                      alt={ext.name}
                       style={{ width: '24px', height: '24px' }}
                     />
                   )}
@@ -133,39 +142,52 @@ export function V1ConnectionModal({
               ))}
             </div>
           ) : (
-            <div className="no-extensions" style={{
-              padding: '20px',
-              textAlign: 'center',
-              color: '#666',
-              fontSize: '14px',
-              backgroundColor: '#f9f9f9',
-              borderRadius: '4px',
-            }}>
-              No browser extensions detected. Make sure you have a HWC v1 compatible wallet extension installed and enabled.
+            <div
+              className="no-extensions"
+              style={{
+                padding: '20px',
+                textAlign: 'center',
+                color: '#666',
+                fontSize: '14px',
+                backgroundColor: '#f9f9f9',
+                borderRadius: '4px',
+              }}
+            >
+              No browser extensions detected. Make sure you have a HWC v1 compatible wallet
+              extension installed and enabled.
             </div>
           )}
         </div>
 
-        <div className="divider" style={{ 
-          margin: '20px 0',
-          textAlign: 'center',
-          position: 'relative',
-        }}>
-          <span style={{
-            backgroundColor: 'white',
-            padding: '0 10px',
+        <div
+          className="divider"
+          style={{
+            margin: '20px 0',
+            textAlign: 'center',
             position: 'relative',
-            zIndex: 1,
-          }}>OR</span>
-          <div style={{
-            position: 'absolute',
-            top: '50%',
-            left: 0,
-            right: 0,
-            height: '1px',
-            backgroundColor: '#ddd',
-            zIndex: 0,
-          }}></div>
+          }}
+        >
+          <span
+            style={{
+              backgroundColor: 'white',
+              padding: '0 10px',
+              position: 'relative',
+              zIndex: 1,
+            }}
+          >
+            OR
+          </span>
+          <div
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: 0,
+              right: 0,
+              height: '1px',
+              backgroundColor: '#ddd',
+              zIndex: 0,
+            }}
+          ></div>
         </div>
 
         <div className="qr-section" style={{ textAlign: 'center' }}>
@@ -192,17 +214,18 @@ export function V1ConnectionModal({
           </button>
         </div>
 
-        <div className="info-section" style={{ 
-          marginTop: '20px',
-          padding: '10px',
-          backgroundColor: '#f5f5f5',
-          borderRadius: '4px',
-          fontSize: '14px',
-          color: '#666',
-        }}>
-          <p>
-            This uses the legacy HWC v1 protocol with DAppConnector.
-          </p>
+        <div
+          className="info-section"
+          style={{
+            marginTop: '20px',
+            padding: '10px',
+            backgroundColor: '#f5f5f5',
+            borderRadius: '4px',
+            fontSize: '14px',
+            color: '#666',
+          }}
+        >
+          <p>This uses the legacy HWC v1 protocol with DAppConnector.</p>
         </div>
       </div>
     </div>

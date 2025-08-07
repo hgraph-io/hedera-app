@@ -71,11 +71,13 @@ describe('config module', () => {
       projectId: 'pid123',
       networks: ['native-testnet', 'native-mainnet'],
       namespace: 'hedera',
+      namespaceMode: 'required',
     })
     expect(constructorSpy).toHaveBeenNthCalledWith(2, {
       projectId: 'pid123',
       networks: ['evm-testnet', 'evm-mainnet'],
       namespace: 'eip155',
+      namespaceMode: 'required',
     })
     expect(initSpy).toHaveBeenCalledWith({
       projectId: 'pid123',

@@ -36,12 +36,14 @@ export const nativeHederaAdapter = new HederaAdapter({
   projectId,
   networks: [HederaChainDefinition.Native.Testnet, HederaChainDefinition.Native.Mainnet],
   namespace: hederaNamespace,
+  namespaceMode: 'required', // Use required to ensure HashPack responds
 })
 
 export const eip155HederaAdapter = new HederaAdapter({
   projectId,
   networks: [HederaChainDefinition.EVM.Testnet, HederaChainDefinition.EVM.Mainnet],
   namespace: 'eip155',
+  namespaceMode: 'required', // Use required for explicit namespace selection
 })
 
 // Initialize HederaProvider with proper chain configuration
@@ -61,4 +63,6 @@ if (HederaProvider.init.length > 0) {
   initOpts.defaultChain = typeof testnetChainId === 'string' ? testnetChainId : `hedera:testnet`
 }
 
-export const universalProvider = (await HederaProvider.init(initOpts)) as unknown as UniversalProvider // avoid type mismatch error due to missing of private properties in HederaProvider
+export const universalProvider = (await HederaProvider.init(
+  initOpts,
+)) as unknown as UniversalProvider // avoid type mismatch error due to missing of private properties in HederaProvider

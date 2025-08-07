@@ -462,7 +462,7 @@ describe('ActionButtonList', () => {
   it('handles successful disconnect without onDisconnect callback', async () => {
     // Reset modules to ensure proper mocking
     vi.resetModules()
-    
+
     // Mock as connected to show disconnect button
     vi.doMock('@reown/appkit/react', () => ({
       useDisconnect: () => ({ disconnect: disconnectMock }),
@@ -471,7 +471,7 @@ describe('ActionButtonList', () => {
       useAppKitState: () => ({ activeChain: 'eip155' }),
       useAppKitProvider: () => ({ walletProvider: createWalletProviderMock() }),
     }))
-    
+
     disconnectMock.mockResolvedValueOnce(undefined)
 
     const propsWithoutOnDisconnect = {

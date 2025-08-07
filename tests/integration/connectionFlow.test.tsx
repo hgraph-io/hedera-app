@@ -18,7 +18,7 @@ export const connectionFlowTests = {
       await waitFor(() => {
         const v2Text = screen.getByText(/Connected via HWC v2/i)
         expect(v2Text).toBeInTheDocument()
-        
+
         if (expectedNamespace) {
           const statusElement = v2Text.parentElement
           expect(statusElement?.textContent).toContain(expectedNamespace)
@@ -30,9 +30,9 @@ export const connectionFlowTests = {
   // Helper to simulate v1 connection
   async simulateV1Connection(mockV1Connection: any, accountId = '0.0.12345') {
     mockV1Connection.isConnected = true
-    mockV1Connection.session = { 
+    mockV1Connection.session = {
       topic: 'v1-test-session',
-      namespaces: {} // V1 doesn't use namespaces
+      namespaces: {}, // V1 doesn't use namespaces
     }
     mockV1Connection.accountId = accountId
     mockV1Connection.signers = [{ getAccountId: () => ({ toString: () => accountId }) }]
@@ -48,11 +48,11 @@ export const connectionFlowTests = {
           methods: [
             'hedera_signMessage',
             'hedera_executeTransaction',
-            'hedera_getAccountBalance'
+            'hedera_getAccountBalance',
           ],
-          events: ['chainChanged', 'accountsChanged']
-        }
-      }
+          events: ['chainChanged', 'accountsChanged'],
+        },
+      },
     }
   },
 
@@ -63,14 +63,10 @@ export const connectionFlowTests = {
       namespaces: {
         eip155: {
           accounts: [`eip155:296:${address}`],
-          methods: [
-            'eth_sendTransaction',
-            'personal_sign',
-            'eth_signTypedData_v4'
-          ],
-          events: ['chainChanged', 'accountsChanged']
-        }
-      }
+          methods: ['eth_sendTransaction', 'personal_sign', 'eth_signTypedData_v4'],
+          events: ['chainChanged', 'accountsChanged'],
+        },
+      },
     }
   },
 
@@ -82,7 +78,7 @@ export const connectionFlowTests = {
     mockV1Connection.signers = []
     mockUniversalProvider.session = null
     sessionStorage.clear()
-  }
+  },
 }
 
 describe('Connection Flow Integration Tests', () => {
@@ -151,10 +147,10 @@ export const testScenarios = {
         hedera: {
           accounts: ['hedera:testnet:0.0.67890'],
           methods: ['hedera_signMessage'],
-          events: []
-        }
-      }
-    }
+          events: [],
+        },
+      },
+    },
   },
   v2EIP155Connection: {
     session: {
@@ -163,9 +159,9 @@ export const testScenarios = {
         eip155: {
           accounts: ['eip155:296:0xABCDEF'],
           methods: ['eth_sendTransaction'],
-          events: []
-        }
-      }
-    }
-  }
+          events: [],
+        },
+      },
+    },
+  },
 }

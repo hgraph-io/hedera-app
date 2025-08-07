@@ -11,37 +11,19 @@ describe('V2NamespaceModal', () => {
   })
 
   it('renders when open', () => {
-    render(
-      <V2NamespaceModal
-        isOpen={true}
-        onClose={mockOnClose}
-        onConnect={mockOnConnect}
-      />
-    )
+    render(<V2NamespaceModal isOpen={true} onClose={mockOnClose} onConnect={mockOnConnect} />)
 
     expect(screen.getByText('Select HWC v2 Namespace')).toBeInTheDocument()
   })
 
   it('does not render when closed', () => {
-    render(
-      <V2NamespaceModal
-        isOpen={false}
-        onClose={mockOnClose}
-        onConnect={mockOnConnect}
-      />
-    )
+    render(<V2NamespaceModal isOpen={false} onClose={mockOnClose} onConnect={mockOnConnect} />)
 
     expect(screen.queryByText('Select HWC v2 Namespace')).not.toBeInTheDocument()
   })
 
   it('displays all three namespace options', () => {
-    render(
-      <V2NamespaceModal
-        isOpen={true}
-        onClose={mockOnClose}
-        onConnect={mockOnConnect}
-      />
-    )
+    render(<V2NamespaceModal isOpen={true} onClose={mockOnClose} onConnect={mockOnConnect} />)
 
     expect(screen.getByText('Hedera Namespace (hedera:)')).toBeInTheDocument()
     expect(screen.getByText('EIP-155 Namespace (eip155:)')).toBeInTheDocument()
@@ -49,26 +31,14 @@ describe('V2NamespaceModal', () => {
   })
 
   it('selects hedera namespace by default', () => {
-    render(
-      <V2NamespaceModal
-        isOpen={true}
-        onClose={mockOnClose}
-        onConnect={mockOnConnect}
-      />
-    )
+    render(<V2NamespaceModal isOpen={true} onClose={mockOnClose} onConnect={mockOnConnect} />)
 
     const hederaRadio = screen.getByRole('radio', { name: /Hedera Namespace/i })
     expect(hederaRadio).toBeChecked()
   })
 
   it('allows selecting eip155 namespace', () => {
-    render(
-      <V2NamespaceModal
-        isOpen={true}
-        onClose={mockOnClose}
-        onConnect={mockOnConnect}
-      />
-    )
+    render(<V2NamespaceModal isOpen={true} onClose={mockOnClose} onConnect={mockOnConnect} />)
 
     const eip155Radio = screen.getByRole('radio', { name: /EIP-155 Namespace/i })
     fireEvent.click(eip155Radio)
@@ -76,13 +46,7 @@ describe('V2NamespaceModal', () => {
   })
 
   it('allows selecting both namespaces', () => {
-    render(
-      <V2NamespaceModal
-        isOpen={true}
-        onClose={mockOnClose}
-        onConnect={mockOnConnect}
-      />
-    )
+    render(<V2NamespaceModal isOpen={true} onClose={mockOnClose} onConnect={mockOnConnect} />)
 
     const bothRadio = screen.getByRole('radio', { name: /Both Namespaces/i })
     fireEvent.click(bothRadio)
@@ -90,13 +54,7 @@ describe('V2NamespaceModal', () => {
   })
 
   it('calls onConnect with hedera when connecting with hedera selected', () => {
-    render(
-      <V2NamespaceModal
-        isOpen={true}
-        onClose={mockOnClose}
-        onConnect={mockOnConnect}
-      />
-    )
+    render(<V2NamespaceModal isOpen={true} onClose={mockOnClose} onConnect={mockOnConnect} />)
 
     const connectButton = screen.getByRole('button', { name: /Connect with Hedera/i })
     fireEvent.click(connectButton)
@@ -106,13 +64,7 @@ describe('V2NamespaceModal', () => {
   })
 
   it('calls onConnect with eip155 when connecting with eip155 selected', () => {
-    render(
-      <V2NamespaceModal
-        isOpen={true}
-        onClose={mockOnClose}
-        onConnect={mockOnConnect}
-      />
-    )
+    render(<V2NamespaceModal isOpen={true} onClose={mockOnClose} onConnect={mockOnConnect} />)
 
     const eip155Radio = screen.getByRole('radio', { name: /EIP-155 Namespace/i })
     fireEvent.click(eip155Radio)
@@ -125,13 +77,7 @@ describe('V2NamespaceModal', () => {
   })
 
   it('calls onConnect with both when connecting with both selected', () => {
-    render(
-      <V2NamespaceModal
-        isOpen={true}
-        onClose={mockOnClose}
-        onConnect={mockOnConnect}
-      />
-    )
+    render(<V2NamespaceModal isOpen={true} onClose={mockOnClose} onConnect={mockOnConnect} />)
 
     const bothRadio = screen.getByRole('radio', { name: /Both Namespaces/i })
     fireEvent.click(bothRadio)
@@ -144,13 +90,7 @@ describe('V2NamespaceModal', () => {
   })
 
   it('closes modal when cancel is clicked', () => {
-    render(
-      <V2NamespaceModal
-        isOpen={true}
-        onClose={mockOnClose}
-        onConnect={mockOnConnect}
-      />
-    )
+    render(<V2NamespaceModal isOpen={true} onClose={mockOnClose} onConnect={mockOnConnect} />)
 
     const cancelButton = screen.getByRole('button', { name: /Cancel/i })
     fireEvent.click(cancelButton)
@@ -160,13 +100,7 @@ describe('V2NamespaceModal', () => {
   })
 
   it('closes modal when clicking outside', () => {
-    render(
-      <V2NamespaceModal
-        isOpen={true}
-        onClose={mockOnClose}
-        onConnect={mockOnConnect}
-      />
-    )
+    render(<V2NamespaceModal isOpen={true} onClose={mockOnClose} onConnect={mockOnConnect} />)
 
     const overlay = screen.getByText('Select HWC v2 Namespace').closest('.modal-overlay')
     if (overlay) {

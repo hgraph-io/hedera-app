@@ -37,16 +37,13 @@ export default defineConfig({
         }
         // Suppress specific comment warnings from ox library
         if (
-          warning.code === 'INVALID_ANNOTATION' && 
+          warning.code === 'INVALID_ANNOTATION' &&
           warning.message?.includes('/*#__PURE__*/')
         ) {
           return
         }
         // Suppress externalized module warnings for known Node.js modules
-        if (
-          warning.code === 'UNRESOLVED_IMPORT' &&
-          warning.message?.includes('stream')
-        ) {
+        if (warning.code === 'UNRESOLVED_IMPORT' && warning.message?.includes('stream')) {
           return
         }
         warn(warning)

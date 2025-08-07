@@ -9,13 +9,13 @@ describe('SessionMonitor', () => {
   beforeEach(() => {
     // Clear localStorage
     localStorage.clear()
-    
+
     // Mock provider
     mockProvider = {
       session: null,
       disconnect: vi.fn().mockResolvedValue(undefined),
     }
-    
+
     sessionMonitor = new SessionMonitor(mockProvider as UniversalProvider)
   })
 
@@ -67,7 +67,7 @@ describe('SessionMonitor', () => {
 
     it('returns false when validation throws error', async () => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-      
+
       mockProvider.session = {
         get expiry() {
           throw new Error('Test error')
@@ -77,7 +77,7 @@ describe('SessionMonitor', () => {
       const result = await sessionMonitor.validateSession()
       expect(result).toBe(false)
       expect(consoleSpy).toHaveBeenCalledWith('Session validation failed:', expect.any(Error))
-      
+
       consoleSpy.mockRestore()
     })
 
@@ -89,20 +89,20 @@ describe('SessionMonitor', () => {
 
       // Directly test the mutex behavior by manually controlling isValidating
       // First, set isValidating to true to simulate an ongoing validation
-      ;(sessionMonitor as any).isValidating = true;
-      
+      ;(sessionMonitor as any).isValidating = true
+
       // Try to validate while another validation is in progress
-      const result = await sessionMonitor.validateSession();
-      
+      const result = await sessionMonitor.validateSession()
+
       // Should return false immediately due to mutex
-      expect(result).toBe(false);
-      
+      expect(result).toBe(false)
+
       // Reset isValidating
-      ;(sessionMonitor as any).isValidating = false;
-      
+      ;(sessionMonitor as any).isValidating = false
+
       // Now validation should work normally
-      const result2 = await sessionMonitor.validateSession();
-      expect(result2).toBe(true);
+      const result2 = await sessionMonitor.validateSession()
+      expect(result2).toBe(true)
     })
   })
 
@@ -132,27 +132,27 @@ describe('SessionMonitor', () => {
 
     it('handles disconnect error gracefully', async () => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-      
+
       mockProvider.session = { topic: 'test-topic' } as any
       mockProvider.disconnect = vi.fn().mockRejectedValue(new Error('Disconnect failed'))
 
       await sessionMonitor.cleanupInvalidSessions()
 
       expect(consoleSpy).toHaveBeenCalledWith('Session cleanup failed:', expect.any(Error))
-      
+
       consoleSpy.mockRestore()
     })
 
     it('handles missing disconnect method', async () => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-      
+
       mockProvider.session = { topic: 'test-topic' } as any
       mockProvider.disconnect = undefined
 
       await sessionMonitor.cleanupInvalidSessions()
 
       expect(consoleSpy).toHaveBeenCalledWith('Session cleanup failed:', expect.any(Error))
-      
+
       consoleSpy.mockRestore()
     })
   })

@@ -22,7 +22,7 @@ describe('V1ConnectionModal', () => {
         onConnect={async () => true}
         availableExtensions={[]}
         isDetectingExtensions={true}
-      />
+      />,
     )
 
     expect(screen.getByText('Detecting browser extensions...')).toBeInTheDocument()
@@ -36,7 +36,7 @@ describe('V1ConnectionModal', () => {
         onConnect={async () => true}
         availableExtensions={mockExtensions}
         isDetectingExtensions={false}
-      />
+      />,
     )
 
     expect(screen.getByText('HashPack')).toBeInTheDocument()
@@ -50,7 +50,7 @@ describe('V1ConnectionModal', () => {
         onConnect={async () => true}
         availableExtensions={[]}
         isDetectingExtensions={false}
-      />
+      />,
     )
 
     expect(screen.getByText(/No browser extensions detected/)).toBeInTheDocument()
@@ -58,7 +58,7 @@ describe('V1ConnectionModal', () => {
 
   it('calls onRefreshExtensions when modal opens', () => {
     const mockRefresh = vi.fn()
-    
+
     const { rerender } = render(
       <V1ConnectionModal
         isOpen={false}
@@ -66,7 +66,7 @@ describe('V1ConnectionModal', () => {
         onConnect={async () => true}
         availableExtensions={[]}
         onRefreshExtensions={mockRefresh}
-      />
+      />,
     )
 
     expect(mockRefresh).not.toHaveBeenCalled()
@@ -78,7 +78,7 @@ describe('V1ConnectionModal', () => {
         onConnect={async () => true}
         availableExtensions={[]}
         onRefreshExtensions={mockRefresh}
-      />
+      />,
     )
 
     expect(mockRefresh).toHaveBeenCalledTimes(1)
@@ -95,7 +95,7 @@ describe('V1ConnectionModal', () => {
         onConnect={mockConnect}
         availableExtensions={mockExtensions}
         isDetectingExtensions={false}
-      />
+      />,
     )
 
     const extensionButton = screen.getByText('HashPack')

@@ -1,11 +1,14 @@
 # Both Namespaces Feature
 
 ## Overview
-Added a third option to the V2 connection modal that allows users to connect with both `hedera` and `eip155` namespaces simultaneously.
+
+Added a third option to the V2 connection modal that allows users to connect with both `hedera`
+and `eip155` namespaces simultaneously.
 
 ## What Changed
 
 ### 1. V2NamespaceModal Component
+
 - Added "both" as a third option alongside "hedera" and "eip155"
 - Shows clear description: "Both Namespaces (hedera: + eip155:)"
 - Highlights the benefits:
@@ -15,6 +18,7 @@ Added a third option to the V2 connection modal that allows users to connect wit
   - Best for wallets supporting multiple protocols
 
 ### 2. Connection Handler (App.tsx)
+
 - Updated `handleV2Connect` to accept 'both' as a namespace option
 - When "both" is selected, creates `requiredNamespaces` with both:
   ```typescript
@@ -25,6 +29,7 @@ Added a third option to the V2 connection modal that allows users to connect wit
   ```
 
 ### 3. Display Logic
+
 - Updated `getCurrentV2Namespace()` to detect and return 'both' when both namespaces are present
 - Shows both account addresses when connected with both namespaces:
   - Hedera Account: hedera:testnet:0.0.xxxxx
@@ -65,11 +70,13 @@ Added a third option to the V2 connection modal that allows users to connect wit
 ## Testing
 
 Run the new tests:
+
 ```bash
 npm run test -- tests/components/V2NamespaceModal.test.tsx
 ```
 
 All 11 tests pass, covering:
+
 - Rendering all three options
 - Selection state management
 - Connection with each namespace type

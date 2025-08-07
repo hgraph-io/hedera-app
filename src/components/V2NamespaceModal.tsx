@@ -7,7 +7,9 @@ interface V2NamespaceModalProps {
 }
 
 export function V2NamespaceModal({ isOpen, onClose, onConnect }: V2NamespaceModalProps) {
-  const [selectedNamespace, setSelectedNamespace] = useState<'hedera' | 'eip155' | 'both'>('hedera')
+  const [selectedNamespace, setSelectedNamespace] = useState<'hedera' | 'eip155' | 'both'>(
+    'hedera',
+  )
 
   if (!isOpen) return null
 
@@ -17,29 +19,34 @@ export function V2NamespaceModal({ isOpen, onClose, onConnect }: V2NamespaceModa
   }
 
   return (
-    <div className="modal-overlay" onClick={(e) => {
-      if (e.target === e.currentTarget) onClose()
-    }}>
+    <div
+      className="modal-overlay"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose()
+      }}
+    >
       <div className="modal-content" style={{ maxWidth: '500px' }}>
         <h2>Select HWC v2 Namespace</h2>
-        
+
         <div style={{ marginBottom: '20px' }}>
           <p style={{ color: '#666', marginBottom: '20px' }}>
             Choose the namespace for your wallet connection:
           </p>
-          
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            <label style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: '10px',
-              padding: '15px',
-              border: '2px solid',
-              borderColor: selectedNamespace === 'hedera' ? '#7B3FF2' : '#ddd',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              backgroundColor: selectedNamespace === 'hedera' ? '#f8f5ff' : 'white',
-            }}>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '10px',
+                padding: '15px',
+                border: '2px solid',
+                borderColor: selectedNamespace === 'hedera' ? '#7B3FF2' : '#ddd',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                backgroundColor: selectedNamespace === 'hedera' ? '#f8f5ff' : 'white',
+              }}
+            >
               <input
                 type="radio"
                 name="namespace"
@@ -59,22 +66,29 @@ export function V2NamespaceModal({ isOpen, onClose, onConnect }: V2NamespaceModa
                   <li>Supports all Hedera account types (Ed25519 & ECDSA)</li>
                   <li>Native Hedera transactions and queries</li>
                   <li>Full HIP-820 compliance</li>
-                  <li>Recommended for Hedera-native wallets</li>
+                  <li style={{ color: '#d32f2f', fontWeight: 'bold' }}>
+                    ❌ HashPack does not support this namespace in WalletConnect v2
+                  </li>
+                  <li style={{ color: '#666' }}>
+                    Other wallets may support this in the future
+                  </li>
                 </ul>
               </div>
             </label>
-            
-            <label style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: '10px',
-              padding: '15px',
-              border: '2px solid',
-              borderColor: selectedNamespace === 'eip155' ? '#7B3FF2' : '#ddd',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              backgroundColor: selectedNamespace === 'eip155' ? '#f8f5ff' : 'white',
-            }}>
+
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '10px',
+                padding: '15px',
+                border: '2px solid',
+                borderColor: selectedNamespace === 'eip155' ? '#7B3FF2' : '#ddd',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                backgroundColor: selectedNamespace === 'eip155' ? '#f8f5ff' : 'white',
+              }}
+            >
               <input
                 type="radio"
                 name="namespace"
@@ -95,21 +109,26 @@ export function V2NamespaceModal({ isOpen, onClose, onConnect }: V2NamespaceModa
                   <li>EVM-compatible transactions via JSON-RPC</li>
                   <li>Compatible with Ethereum wallets</li>
                   <li>Uses Hedera JSON-RPC Relay</li>
+                  <li style={{ color: '#4caf50', fontWeight: 'bold' }}>
+                    ✅ Supported by HashPack in WalletConnect v2
+                  </li>
                 </ul>
               </div>
             </label>
-            
-            <label style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: '10px',
-              padding: '15px',
-              border: '2px solid',
-              borderColor: selectedNamespace === 'both' ? '#7B3FF2' : '#ddd',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              backgroundColor: selectedNamespace === 'both' ? '#f8f5ff' : 'white',
-            }}>
+
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '10px',
+                padding: '15px',
+                border: '2px solid',
+                borderColor: selectedNamespace === 'both' ? '#7B3FF2' : '#ddd',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                backgroundColor: selectedNamespace === 'both' ? '#f8f5ff' : 'white',
+              }}
+            >
               <input
                 type="radio"
                 name="namespace"
@@ -129,13 +148,15 @@ export function V2NamespaceModal({ isOpen, onClose, onConnect }: V2NamespaceModa
                   <li>Maximum compatibility with all features</li>
                   <li>Supports both Ed25519 and ECDSA accounts</li>
                   <li>Can use native Hedera or EVM transactions</li>
-                  <li>Best for wallets supporting multiple protocols</li>
+                  <li style={{ color: '#d32f2f', fontWeight: 'bold' }}>
+                    ❌ HashPack ignores hedera namespace, only connects via eip155
+                  </li>
                 </ul>
               </div>
             </label>
           </div>
         </div>
-        
+
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
           <button
             onClick={onClose}
@@ -163,7 +184,12 @@ export function V2NamespaceModal({ isOpen, onClose, onConnect }: V2NamespaceModa
               fontSize: '16px',
             }}
           >
-            Connect with {selectedNamespace === 'hedera' ? 'Hedera' : selectedNamespace === 'eip155' ? 'EIP-155' : 'Both'}
+            Connect with{' '}
+            {selectedNamespace === 'hedera'
+              ? 'Hedera'
+              : selectedNamespace === 'eip155'
+                ? 'EIP-155'
+                : 'Both'}
           </button>
         </div>
       </div>

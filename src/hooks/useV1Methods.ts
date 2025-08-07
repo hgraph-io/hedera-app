@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { 
+import {
   TransferTransaction,
   TopicCreateTransaction,
   AccountBalanceQuery,
@@ -22,7 +22,7 @@ export function useV1Methods({ signers, accountId, connector }: UseV1MethodsProp
     if (signers && signers.length > 0) {
       return signers[0]
     }
-    
+
     // If no signers but we have a connector and accountId, try to get it
     if (connector && accountId) {
       try {
@@ -35,17 +35,17 @@ export function useV1Methods({ signers, accountId, connector }: UseV1MethodsProp
         console.warn('Could not get signer from connector:', e)
       }
     }
-    
+
     throw new Error('No signer available. Please reconnect your wallet.')
   }, [signers, connector, accountId])
 
   const transferHBAR = useCallback(async () => {
     if (!accountId) throw new Error('No account connected')
-    
+
     const signer = getSigner()
     const fromAccountId = AccountId.fromString(accountId)
     const toAccountId = AccountId.fromString('0.0.48997416') // Example recipient
-    
+
     const transaction = new TransferTransaction()
       .addHbarTransfer(fromAccountId, new Hbar(-10, HbarUnit.Hbar))
       .addHbarTransfer(toAccountId, new Hbar(10, HbarUnit.Hbar))
@@ -54,15 +54,16 @@ export function useV1Methods({ signers, accountId, connector }: UseV1MethodsProp
     try {
       const signedTransaction = await signer.signTransaction(transaction)
       const response = await signer.call(signedTransaction)
-      
+
       // Try to get transaction ID from response
       let transactionId = ''
       if (response && typeof response === 'object') {
-        transactionId = (response as any).transactionId?.toString() || 
-                       (response as any).txId?.toString() || 
-                       'Transaction submitted'
+        transactionId =
+          (response as any).transactionId?.toString() ||
+          (response as any).txId?.toString() ||
+          'Transaction submitted'
       }
-      
+
       return {
         transactionId,
         status: 'SUCCESS',
@@ -75,9 +76,9 @@ export function useV1Methods({ signers, accountId, connector }: UseV1MethodsProp
 
   const createTopic = useCallback(async () => {
     if (!accountId) throw new Error('No account connected')
-    
+
     const signer = getSigner()
-    
+
     const transaction = new TopicCreateTransaction()
       .setTopicMemo('V1 Topic - ' + new Date().toISOString())
       .setSubmitKey(signer.getAccountKey())
@@ -85,15 +86,16 @@ export function useV1Methods({ signers, accountId, connector }: UseV1MethodsProp
     try {
       const signedTransaction = await signer.signTransaction(transaction)
       const response = await signer.call(signedTransaction)
-      
+
       // Try to get transaction ID from response
       let transactionId = ''
       if (response && typeof response === 'object') {
-        transactionId = (response as any).transactionId?.toString() || 
-                       (response as any).txId?.toString() || 
-                       'Transaction submitted'
+        transactionId =
+          (response as any).transactionId?.toString() ||
+          (response as any).txId?.toString() ||
+          'Transaction submitted'
       }
-      
+
       return {
         transactionId,
         topicId: 'Topic creation submitted',
@@ -107,14 +109,13 @@ export function useV1Methods({ signers, accountId, connector }: UseV1MethodsProp
 
   const getAccountBalance = useCallback(async () => {
     if (!accountId) throw new Error('No account connected')
-    
+
     const signer = getSigner()
-    const query = new AccountBalanceQuery()
-      .setAccountId(AccountId.fromString(accountId))
+    const query = new AccountBalanceQuery().setAccountId(AccountId.fromString(accountId))
 
     try {
       const balance = await signer.call(query)
-      
+
       return {
         hbars: balance.hbars.toString(),
         tokens: [],
@@ -125,94 +126,101 @@ export function useV1Methods({ signers, accountId, connector }: UseV1MethodsProp
     }
   }, [accountId, getSigner])
 
-  const signMessage = useCallback(async (message: string) => {
-    if (!accountId) throw new Error('No account connected')
-    
-    const signer = getSigner()
-    
-    try {
-      // Try multiple approaches for signing
-      let result: any
-      
-      // Method 1: Direct sign with message bytes
-      try {
-        const messageBytes = new TextEncoder().encode(message)
-        result = await signer.sign([messageBytes])
-        if (result && result[0]) {
-          return result[0]
-        }
-      } catch (e) {
-        console.log('Sign method 1 failed:', e)
-      }
-      
-      // Method 2: Sign with params object
-      try {
-        const params = {
-          message,
-          signerAccountId: accountId
-        }
-        result = await (signer as any).sign([params])
-        if (result && result[0]) {
-          return result[0]
-        }
-      } catch (e) {
-        console.log('Sign method 2 failed:', e)
-      }
-      
-      // Method 3: Direct signMessage if available
-      if ((signer as any).signMessage) {
-        result = await (signer as any).signMessage(message)
-        if (result) {
-          return result
-        }
-      }
-      
-      throw new Error('Unable to sign message with any available method')
-    } catch (error) {
-      console.error('Message signing failed:', error)
-      throw error
-    }
-  }, [accountId, getSigner])
+  const signMessage = useCallback(
+    async (message: string) => {
+      if (!accountId) throw new Error('No account connected')
 
-  const executeTransaction = useCallback(async (transaction: any) => {
-    if (!accountId) throw new Error('No account connected')
-    
-    const signer = getSigner()
-    
-    try {
-      const signedTransaction = await signer.signTransaction(transaction)
-      const response = await signer.call(signedTransaction)
-      
-      // Try to get transaction ID from response
-      let transactionId = ''
-      if (response && typeof response === 'object') {
-        transactionId = (response as any).transactionId?.toString() || 
-                       (response as any).txId?.toString() || 
-                       'Transaction submitted'
+      const signer = getSigner()
+
+      try {
+        // Try multiple approaches for signing
+        let result: any
+
+        // Method 1: Direct sign with message bytes
+        try {
+          const messageBytes = new TextEncoder().encode(message)
+          result = await signer.sign([messageBytes])
+          if (result && result[0]) {
+            return result[0]
+          }
+        } catch (e) {
+          console.log('Sign method 1 failed:', e)
+        }
+
+        // Method 2: Sign with params object
+        try {
+          const params = {
+            message,
+            signerAccountId: accountId,
+          }
+          result = await (signer as any).sign([params])
+          if (result && result[0]) {
+            return result[0]
+          }
+        } catch (e) {
+          console.log('Sign method 2 failed:', e)
+        }
+
+        // Method 3: Direct signMessage if available
+        if ((signer as any).signMessage) {
+          result = await (signer as any).signMessage(message)
+          if (result) {
+            return result
+          }
+        }
+
+        throw new Error('Unable to sign message with any available method')
+      } catch (error) {
+        console.error('Message signing failed:', error)
+        throw error
       }
-      
-      return {
-        transactionId,
-        status: 'SUCCESS',
-        receipt: { status: { toString: () => 'SUCCESS' } },
+    },
+    [accountId, getSigner],
+  )
+
+  const executeTransaction = useCallback(
+    async (transaction: any) => {
+      if (!accountId) throw new Error('No account connected')
+
+      const signer = getSigner()
+
+      try {
+        const signedTransaction = await signer.signTransaction(transaction)
+        const response = await signer.call(signedTransaction)
+
+        // Try to get transaction ID from response
+        let transactionId = ''
+        if (response && typeof response === 'object') {
+          transactionId =
+            (response as any).transactionId?.toString() ||
+            (response as any).txId?.toString() ||
+            'Transaction submitted'
+        }
+
+        return {
+          transactionId,
+          status: 'SUCCESS',
+          receipt: { status: { toString: () => 'SUCCESS' } },
+        }
+      } catch (error) {
+        console.error('Transaction execution failed:', error)
+        throw error
       }
-    } catch (error) {
-      console.error('Transaction execution failed:', error)
-      throw error
-    }
-  }, [accountId, getSigner])
+    },
+    [accountId, getSigner],
+  )
 
   const getNetworkInfo = useCallback(async () => {
     try {
       const signer = getSigner()
-      
+
       // Try to get network info from signer
       let ledgerId = 'testnet' // default
-      
+
       if (signer.getLedgerId) {
         ledgerId = signer.getLedgerId()?.toString() || 'testnet'
       }
-      
+
       // Try to get client for node info
       let nodes: any[] = []
       try {
@@ -228,7 +236,7 @@ export function useV1Methods({ signers, accountId, connector }: UseV1MethodsProp
       } catch (e) {
         console.log('Could not get network nodes:', e)
       }
-      
+
       return {
         ledgerId,
         nodes,

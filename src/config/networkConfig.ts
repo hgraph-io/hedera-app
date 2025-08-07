@@ -18,7 +18,7 @@ export function getNetworkByChainId(chainId: string) {
     HederaChainDefinition.EVM.Mainnet,
   ]
 
-  return networks.find(n => {
+  return networks.find((n) => {
     const networkId = typeof n.id === 'string' ? n.id : `${n.chainNamespace}:${n.id}`
     return networkId === chainId
   })
