@@ -222,3 +222,32 @@ a {
 hr {
   margin: 2rem 0;
 }
+
+.connection-error {
+  background-color: #fee;
+  border: 1px solid #fcc;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px auto;
+  max-width: 500px;
+  text-align: center;
+}
+
+.connection-error p {
+  color: #c00;
+  margin-bottom: 15px;
+}
+
+.connection-error button {
+  background-color: #c00;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.connection-error button:hover {
+  background-color: #a00;
+}

@@ -5,10 +5,12 @@
   "scripts": {
     "dev": "vite --port 5173 --force",
     "build": "tsc -b && vite build",
+    "build:quiet": "tsc -b && vite build 2>&1 | node scripts/suppress-warnings.js",
     "lint": "eslint .",
     "prettier": "prettier --write .",
     "preview": "vite preview",
-    "test": "npm run build && vitest run --coverage"
+    "test": "npm run build:quiet && NODE_ENV=test NODE_OPTIONS='--max-old-space-size=8192' vitest run --coverage",
+    "test:verbose": "npm run build && NODE_OPTIONS='--max-old-space-size=8192' vitest run --coverage"
   },
   "dependencies": {
     "@hashgraph/hedera-wallet-connect": "2.0.3-canary.2d3a595.0",
@@ -38,6 +40,7 @@
     "globals": "^16.0.0",
     "jsdom": "^26.1.0",
     "prettier": "^3.5.3",
+    "stream-browserify": "^3.0.0",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.26.1",
     "vite": "^6.2.1",

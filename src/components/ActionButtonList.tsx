@@ -100,6 +100,20 @@ export const ActionButtonList = ({
   const executeMethod = async (methodName: string, params: Record<string, string>) => {
     setIsLoading(true)
     try {
+      // Validate connection before execution
+      if (isConnected && walletProvider) {
+        try {
+          // Quick validation check
+          await (walletProvider as any).request({ method: 'eth_chainId' })
+        } catch (validationError) {
+          console.error('Connection validation failed:', validationError)
+          // Force reconnection
+          alert('Connection lost. Please reconnect your wallet.')
+          setIsLoading(false)
+          return
+        }
+      }
+
       let result
 
       // Execute the method based on name

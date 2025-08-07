@@ -26,27 +26,39 @@ export const metadata = {
 }
 
 export const networks = [
-  HederaChainDefinition.Native.Mainnet,
   HederaChainDefinition.Native.Testnet,
-  //should be same as import {hedera, hederaTestnet}from '@reown/appkit/networks'
-  HederaChainDefinition.EVM.Mainnet,
+  HederaChainDefinition.Native.Mainnet,
   HederaChainDefinition.EVM.Testnet,
+  HederaChainDefinition.EVM.Mainnet,
 ] as [AppKitNetwork, ...AppKitNetwork[]]
 
 export const nativeHederaAdapter = new HederaAdapter({
   projectId,
-  networks: [HederaChainDefinition.Native.Mainnet, HederaChainDefinition.Native.Testnet],
+  networks: [HederaChainDefinition.Native.Testnet, HederaChainDefinition.Native.Mainnet],
   namespace: hederaNamespace,
 })
 
 export const eip155HederaAdapter = new HederaAdapter({
   projectId,
-  networks: [HederaChainDefinition.EVM.Mainnet, HederaChainDefinition.EVM.Testnet],
+  networks: [HederaChainDefinition.EVM.Testnet, HederaChainDefinition.EVM.Mainnet],
   namespace: 'eip155',
 })
 
-export const universalProvider = (await HederaProvider.init({
+// Initialize HederaProvider with proper chain configuration
+const providerOpts = {
   projectId,
   metadata,
-  logger: 'debug',
-})) as unknown as UniversalProvider // avoid type mismatch error due to missing of private properties in HederaProvider
+  logger: 'debug' as const,
+}
+
+// Add chains if supported by the provider
+const initOpts = providerOpts as any
+if (HederaProvider.init.length > 0) {
+  // Try to configure chains for testnet preference
+  const testnetChainId = HederaChainDefinition.Native.Testnet.id
+  
+  // Set default chain if possible
+  initOpts.defaultChain = typeof testnetChainId === 'string' ? testnetChainId : `hedera:testnet`
+}
+
+export const universalProvider = (await HederaProvider.init(initOpts)) as unknown as UniversalProvider // avoid type mismatch error due to missing of private properties in HederaProvider
