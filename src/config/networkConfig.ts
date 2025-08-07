@@ -17,7 +17,7 @@ export function getNetworkByChainId(chainId: string) {
     HederaChainDefinition.EVM.Testnet,
     HederaChainDefinition.EVM.Mainnet,
   ]
-  
+
   return networks.find(n => {
     const networkId = typeof n.id === 'string' ? n.id : `${n.chainNamespace}:${n.id}`
     return networkId === chainId
@@ -29,7 +29,7 @@ export function sortNetworksTestnetFirst(networks: any[]) {
   return networks.sort((a, b) => {
     const aIsTestnet = a.name?.toLowerCase().includes('testnet') || false
     const bIsTestnet = b.name?.toLowerCase().includes('testnet') || false
-    
+
     if (aIsTestnet && !bIsTestnet) return -1
     if (!aIsTestnet && bIsTestnet) return 1
     return 0

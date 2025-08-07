@@ -56,7 +56,7 @@ const initOpts = providerOpts as any
 if (HederaProvider.init.length > 0) {
   // Try to configure chains for testnet preference
   const testnetChainId = HederaChainDefinition.Native.Testnet.id
-  
+
   // Set default chain if possible
   initOpts.defaultChain = typeof testnetChainId === 'string' ? testnetChainId : `hedera:testnet`
 }

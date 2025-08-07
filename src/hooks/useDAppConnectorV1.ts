@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { 
-  DAppConnector, 
+import {
+  DAppConnector,
   HederaJsonRpcMethod,
   ExtensionData,
   DAppSigner
@@ -17,6 +17,7 @@ export interface DAppConnectorState {
   signers: DAppSigner[]
   accountId: string | null
   error: string | null
+  isDetectingExtensions: boolean
 }
 
 export function useDAppConnectorV1() {
@@ -28,6 +29,7 @@ export function useDAppConnectorV1() {
     signers: [],
     accountId: null,
     error: null,
+    isDetectingExtensions: true,
   })
 
   // Initialize DAppConnector
@@ -53,12 +55,23 @@ export function useDAppConnectorV1() {
         isInitializing: false,
       }))
 
+      // Wait for extension detection to complete
+      // Extensions are detected in the DAppConnector constructor with a 200ms delay
+      // We'll wait a bit longer to ensure all extensions have responded
+      setTimeout(() => {
+        setState(prev => ({
+          ...prev,
+          isDetectingExtensions: false,
+        }))
+      }, 1000)
+
       return dAppConnector
     } catch (error) {
       console.error('Failed to initialize DAppConnector:', error)
       setState(prev => ({
         ...prev,
         isInitializing: false,
+        isDetectingExtensions: false,
         error: error instanceof Error ? error.message : 'Failed to initialize connector',
       }))
       return null
@@ -244,6 +257,23 @@ export function useDAppConnectorV1() {
     })
   }, [state.connector])
 
+  // Refresh extension detection
+  const refreshExtensionDetection = useCallback(() => {
+    if (!state.connector) return
+    
+    setState(prev => ({ ...prev, isDetectingExtensions: true }))
+    
+    // Trigger a new extension query
+    if (typeof window !== 'undefined') {
+      window.postMessage({ type: 'hedera-extension-query' }, '*')
+    }
+    
+    // Wait for extensions to respond
+    setTimeout(() => {
+      setState(prev => ({ ...prev, isDetectingExtensions: false }))
+    }, 800)
+  }, [state.connector])
+
   // Re-establish signers when session changes
   useEffect(() => {
     if (state.connector && state.session && state.signers.length === 0) {
@@ -258,16 +288,27 @@ export function useDAppConnectorV1() {
     }
   }, [state.connector, state.session, state.signers.length, updateSigners])
 
-  // Check for existing session on mount
+  // Initialize connector on mount for extension detection
   useEffect(() => {
-    const checkExistingSession = async () => {
+    const initialize = async () => {
+      // Don't initialize if we're in a v2 context
+      // Check if this is a v2 session by looking for the v2 marker
+      const v2Namespace = sessionStorage.getItem('selectedHWCv2Namespace')
+      if (v2Namespace) {
+        console.log('V1 connector skipping initialization - V2 namespace detected')
+        return
+      }
+
+      // Always initialize the connector to detect extensions early
       const connector = await initializeConnector()
       if (!connector) return
 
+      // Check for existing session
       const walletClient = (connector as any)?.walletConnectClient
       const currentSession = walletClient?.session?.getAll?.()?.[0]
-      
-      if (currentSession) {
+
+      // V1 sessions have the hedera namespace
+      if (currentSession && currentSession.namespaces?.hedera) {
         const { signers, accountId } = updateSigners(connector, currentSession)
 
         setState(prev => ({
@@ -281,7 +322,7 @@ export function useDAppConnectorV1() {
       }
     }
 
-    checkExistingSession()
+    initialize()
   }, []) // Only run on mount
 
   return {
@@ -289,5 +330,7 @@ export function useDAppConnectorV1() {
     connect,
     disconnect,
     getAvailableExtensions,
+    refreshExtensionDetection,
+    initializeConnector,
   }
 }

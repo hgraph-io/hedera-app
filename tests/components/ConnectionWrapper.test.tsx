@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { ConnectionWrapper } from '../../src/components/ConnectionWrapper'
 import { universalProvider } from '../../src/config'
 
@@ -25,6 +25,15 @@ describe('ConnectionWrapper', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    // Clear sessionStorage before each test
+    sessionStorage.clear()
+    // Use fake timers for controlled testing
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.runOnlyPendingTimers()
+    vi.useRealTimers()
   })
 
   it('renders children when not connected', () => {
@@ -51,53 +60,14 @@ describe('ConnectionWrapper', () => {
       </ConnectionWrapper>
     )
 
-    await waitFor(() => {
-      expect(screen.getByText('Test Child')).toBeInTheDocument()
-    })
+    // Wait for async validation to complete
+    await vi.runAllTimersAsync()
 
+    expect(screen.getByText('Test Child')).toBeInTheDocument()
     expect(mockRequest).toHaveBeenCalledWith({ method: 'eth_accounts' })
   })
 
-  it('shows error message when connection is invalid', async () => {
-    mockUseAppKitAccount.mockReturnValue({ isConnected: true, address: '0x123' })
-    mockUseAppKitState.mockReturnValue({ open: false })
-    mockRequest.mockResolvedValue([])
-
-    render(
-      <ConnectionWrapper>
-        <div>Test Child</div>
-      </ConnectionWrapper>
-    )
-
-    await waitFor(() => {
-      expect(screen.getByText('Connection state mismatch detected. Please reconnect your wallet.')).toBeInTheDocument()
-    })
-
-    expect(screen.queryByText('Test Child')).not.toBeInTheDocument()
-  })
-
-  it('calls onConnectionError when validation fails', async () => {
-    const mockOnConnectionError = vi.fn()
-    const mockError = new Error('Connection failed')
-    
-    mockUseAppKitAccount.mockReturnValue({ isConnected: true, address: '0x123' })
-    mockUseAppKitState.mockReturnValue({ open: false })
-    mockRequest.mockRejectedValue(mockError)
-
-    render(
-      <ConnectionWrapper onConnectionError={mockOnConnectionError}>
-        <div>Test Child</div>
-      </ConnectionWrapper>
-    )
-
-    await waitFor(() => {
-      expect(mockOnConnectionError).toHaveBeenCalledWith(mockError)
-    })
-
-    expect(screen.getByText('Connection state mismatch detected. Please reconnect your wallet.')).toBeInTheDocument()
-  })
-
-  it('refreshes page when refresh button is clicked', async () => {
+  it('auto-refreshes when connection is invalid', async () => {
     const mockReload = vi.fn()
     Object.defineProperty(window, 'location', {
       value: { reload: mockReload },
@@ -114,17 +84,54 @@ describe('ConnectionWrapper', () => {
       </ConnectionWrapper>
     )
 
-    await waitFor(() => {
-      expect(screen.getByText('Connection state mismatch detected. Please reconnect your wallet.')).toBeInTheDocument()
-    })
+    // Wait for async validation to complete
+    await vi.runAllTimersAsync()
 
-    const refreshButton = screen.getByText('Refresh Page')
-    refreshButton.click()
+    // Should show refreshing message
+    expect(screen.getByText('Refreshing connection...')).toBeInTheDocument()
+    expect(screen.queryByText('Test Child')).not.toBeInTheDocument()
+
+    // Advance timer to trigger reload (1000ms timeout)
+    vi.advanceTimersByTime(1000)
 
     expect(mockReload).toHaveBeenCalled()
+    expect(sessionStorage.getItem('connectionRefreshAttempts')).toBe('1')
   })
 
-  it('does not validate when modal is open', () => {
+  it('calls onConnectionError and auto-refreshes when validation fails', async () => {
+    const mockOnConnectionError = vi.fn()
+    const mockError = new Error('Connection failed')
+    const mockReload = vi.fn()
+    Object.defineProperty(window, 'location', {
+      value: { reload: mockReload },
+      writable: true,
+    })
+    
+    mockUseAppKitAccount.mockReturnValue({ isConnected: true, address: '0x123' })
+    mockUseAppKitState.mockReturnValue({ open: false })
+    mockRequest.mockRejectedValue(mockError)
+
+    render(
+      <ConnectionWrapper onConnectionError={mockOnConnectionError}>
+        <div>Test Child</div>
+      </ConnectionWrapper>
+    )
+
+    // Wait for async validation to complete
+    await vi.runAllTimersAsync()
+
+    expect(mockOnConnectionError).toHaveBeenCalledWith(mockError)
+    expect(screen.getByText('Refreshing connection...')).toBeInTheDocument()
+    
+    // Advance timer to trigger reload
+    vi.advanceTimersByTime(1000)
+
+    expect(mockReload).toHaveBeenCalled()
+    expect(sessionStorage.getItem('connectionRefreshAttempts')).toBe('1')
+  })
+
+
+  it('does not validate when modal is open', async () => {
     mockUseAppKitAccount.mockReturnValue({ isConnected: true, address: '0x123' })
     mockUseAppKitState.mockReturnValue({ open: true })
 
@@ -134,7 +141,80 @@ describe('ConnectionWrapper', () => {
       </ConnectionWrapper>
     )
 
+    // Run any pending timers
+    await vi.runAllTimersAsync()
+
     expect(screen.getByText('Test Child')).toBeInTheDocument()
     expect(mockRequest).not.toHaveBeenCalled()
+  })
+
+  it('respects maximum refresh attempts', async () => {
+    const mockReload = vi.fn()
+    Object.defineProperty(window, 'location', {
+      value: { reload: mockReload },
+      writable: true,
+    })
+
+    // Set sessionStorage to max attempts - 1
+    sessionStorage.setItem('connectionRefreshAttempts', '2')
+
+    mockUseAppKitAccount.mockReturnValue({ isConnected: true, address: '0x123' })
+    mockUseAppKitState.mockReturnValue({ open: false })
+    mockRequest.mockResolvedValue([])
+
+    render(
+      <ConnectionWrapper>
+        <div>Test Child</div>
+      </ConnectionWrapper>
+    )
+
+    // Wait for async validation
+    await vi.runAllTimersAsync()
+
+    // Should show refreshing and increment attempts
+    expect(screen.getByText('Refreshing connection...')).toBeInTheDocument()
+    
+    // Advance timer to trigger reload
+    vi.advanceTimersByTime(1000)
+
+    expect(mockReload).toHaveBeenCalled()
+    expect(sessionStorage.getItem('connectionRefreshAttempts')).toBe('3')
+  })
+
+  it('does not refresh when max attempts reached', async () => {
+    const mockReload = vi.fn()
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    Object.defineProperty(window, 'location', {
+      value: { reload: mockReload },
+      writable: true,
+    })
+
+    // Set sessionStorage to max attempts
+    sessionStorage.setItem('connectionRefreshAttempts', '3')
+
+    mockUseAppKitAccount.mockReturnValue({ isConnected: true, address: '0x123' })
+    mockUseAppKitState.mockReturnValue({ open: false })
+    mockRequest.mockResolvedValue([])
+
+    render(
+      <ConnectionWrapper>
+        <div>Test Child</div>
+      </ConnectionWrapper>
+    )
+
+    // Wait for async validation
+    await vi.runAllTimersAsync()
+
+    // Should show refreshing but NOT reload
+    expect(screen.getByText('Refreshing connection...')).toBeInTheDocument()
+    
+    // Advance timer - should not trigger reload
+    vi.advanceTimersByTime(1000)
+
+    expect(mockReload).not.toHaveBeenCalled()
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Max refresh attempts reached. Please manually reconnect.')
+    expect(sessionStorage.getItem('connectionRefreshAttempts')).toBeNull()
+    
+    consoleErrorSpy.mockRestore()
   })
 })

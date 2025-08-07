@@ -6,13 +6,17 @@ interface V1ConnectionModalProps {
   onClose: () => void
   onConnect: (extensionData?: ExtensionData[]) => Promise<boolean>
   availableExtensions: ExtensionData[]
+  isDetectingExtensions?: boolean
+  onRefreshExtensions?: () => void
 }
 
 export function V1ConnectionModal({ 
   isOpen, 
   onClose, 
   onConnect, 
-  availableExtensions 
+  availableExtensions,
+  isDetectingExtensions = false,
+  onRefreshExtensions 
 }: V1ConnectionModalProps) {
   const [isConnecting, setIsConnecting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -21,8 +25,11 @@ export function V1ConnectionModal({
     if (!isOpen) {
       setError(null)
       setIsConnecting(false)
+    } else {
+      // Refresh extension detection when modal opens
+      onRefreshExtensions?.()
     }
-  }, [isOpen])
+  }, [isOpen, onRefreshExtensions])
 
   const handleQRConnection = async () => {
     setIsConnecting(true)
@@ -82,9 +89,18 @@ export function V1ConnectionModal({
           </div>
         )}
 
-        {availableExtensions.length > 0 && (
-          <div className="extensions-section" style={{ marginBottom: '20px' }}>
-            <h3>Available Browser Extensions</h3>
+        <div className="extensions-section" style={{ marginBottom: '20px' }}>
+          <h3>Browser Extensions</h3>
+          {isDetectingExtensions ? (
+            <div className="extensions-loading" style={{
+              padding: '20px',
+              textAlign: 'center',
+              color: '#666',
+              fontStyle: 'italic',
+            }}>
+              Detecting browser extensions...
+            </div>
+          ) : availableExtensions.length > 0 ? (
             <div className="extensions-list">
               {availableExtensions.map((ext) => (
                 <button
@@ -116,8 +132,19 @@ export function V1ConnectionModal({
                 </button>
               ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="no-extensions" style={{
+              padding: '20px',
+              textAlign: 'center',
+              color: '#666',
+              fontSize: '14px',
+              backgroundColor: '#f9f9f9',
+              borderRadius: '4px',
+            }}>
+              No browser extensions detected. Make sure you have a HWC v1 compatible wallet extension installed and enabled.
+            </div>
+          )}
+        </div>
 
         <div className="divider" style={{ 
           margin: '20px 0',

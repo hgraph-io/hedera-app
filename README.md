@@ -1,111 +1,258 @@
-# Hedera App
+# Hedera WalletConnect Demo App
 
-This is an example app that integrates Hedera using both the native Hedera gRPC and REST APIs as
-well as Ethereum JSON-RPC compatible endpoints. This app utilizes
-[Reown AppKit](https://docs.reown.com/appkit/overview). For an example Hedera wallet
-implementation see <https://github.com/hgraph-io/hedera-wallet>.
+A comprehensive demo application showcasing integration of Hedera with WalletConnect v1 and v2 protocols. This app demonstrates best practices for developers building dApps on Hedera using the `@hashgraph/hedera-wallet-connect` library.
 
-> [!NOTE]
->
-> Hedera consensus nodes provide gRPC APIs to change network state such as submitting as
-> transferring cryptocurrency or smart contract calls that change network state.
->
-> Hedera mirror nodes provide REST APIs to query read-only network state such as account
-> balances and transaction history.
->
-> - [Consensus Nodes](https://docs.hedera.com/hedera/networks/mainnet/mainnet-nodes)
-> - [Mirror Nodes](https://docs.hedera.com/hedera/core-concepts/mirror-nodes)
-> - [Hedera JSON-RPC Relay](https://github.com/hashgraph/hedera-json-rpc-relay/blob/main/docs/rpc-api.md)
+## 🎯 Purpose
 
-## Getting started
+This demo app serves as a reference implementation for developers integrating Hedera wallets into their dApps. It demonstrates:
+- **Dual Protocol Support**: Both WalletConnect v1 (legacy) and v2 (Reown AppKit)
+- **Multi-Namespace Support**: Native Hedera protocol and EVM compatibility layer
+- **Complete Feature Set**: All major Hedera operations including transfers, signing, and queries
+- **Real-World Patterns**: Error handling, session management, and UI/UX best practices
 
-1. Fill out the .env file with a [Reown](https://cloud.reown.com) project id.
+## 🚀 Quick Start
 
-```sh
-## copy and then update the .env file
-cp .env.example .env
-```
+### Prerequisites
+- Node.js 18+ and npm
+- A [Reown Cloud](https://cloud.reown.com) project ID (free)
+- A Hedera testnet account (get one at [portal.hedera.com](https://portal.hedera.com))
 
-2. Install dependencies
+### Installation
 
-```sh
+```bash
+# Clone and navigate to the demo
+cd demos/hedera-app
+
+# Install dependencies
 npm install
-```
 
-3. Run the app
+# Configure environment
+cp .env.example .env
+# Edit .env and add your VITE_REOWN_PROJECT_ID
 
-```sh
+# Run the development server
 npm run dev
 ```
 
-## Key considerations when integrating Hedera
+Visit http://localhost:5173 to see the app.
 
-The Hedera network provides gRPC and REST APIs that are consumed by Hedera SDKs and network
-users.
+## 🏗️ Architecture Overview
 
-Hedera supports the Ethereum JSON-RPC spec through a middle layer called the Hedera JSON-RPC
-Relay. This relay is responsible for translating Ethereum JSON-RPC compatible API calls into
-Hedera gRPC and REST API calls. To see a full list of supported methods, refer to the JSON-RPC
-Relay documentation linked in the note above.
+### Connection Methods
 
-Apps and wallets that integrate Hedera can choose to use the Hedera JSON-RPC Relay to interact
-with the network, directly use Hedera APIs and SDKs, or do both. A strong reason to leverage the
-Hedera JSON-RPC Relay is to utilize existing tools and libraries available in the EVM ecosystem
-such as Wagmi, Viem, AppKit, and WalletKit.
+The app supports two WalletConnect protocol versions:
 
-> [!WARNING]
->
-> When using the EVM namespace, Hedera accounts that have Ed25519 public/private key pairs are
-> not supported. See the docs for more information.
->
-> - [Reown: Custom networks](https://docs.reown.com/appkit/react/core/custom-networks#1-adding-your-chain-to-viem%E2%80%99s-directory-recommended)
-> - [Hedera: Ed25519 vs ECDSA](https://docs.hedera.com/hedera/core-concepts/keys-and-signatures#choosing-between-ecdsa-and-ed25519-keys).
+#### WalletConnect v1 (HWC v1)
+- Uses `DAppConnector` from `@hashgraph/hedera-wallet-connect`
+- **Always** uses the `hedera` namespace
+- Supports QR code and browser extension connections
+- Best for wallets that haven't migrated to v2
 
-A strong reason to integrate Hedera via the native APIs is to fully support all account types
-and native transaction types provided by Hedera.
+#### WalletConnect v2 (HWC v2)
+- Uses Reown AppKit with custom Hedera adapters
+- Supports three namespace options:
+  1. **Hedera Namespace** (`hedera:`): Native Hedera protocol
+  2. **EIP-155 Namespace** (`eip155:`): Ethereum compatibility
+  3. **Both Namespaces**: Maximum compatibility
 
-In the context of Reown's WalletKit and AppKit, this is defined by the namespaces requested by
-apps to wallets. The namespace is `eip155` for the EVM compatibility layer and `hedera` for
-native integration.
+### Key Components
 
-## Agent setup
-
-The repository includes a helper script to prepare a local environment. Run the following
-command after cloning the project:
-
-```sh
-./agent-setup.sh
+```
+src/
+├── App.tsx                          # Main app with v1/v2 support & namespace selection
+├── config/
+│   └── index.ts                     # WalletConnect configuration
+├── hooks/
+│   ├── useDAppConnectorV1.ts       # v1 connection management
+│   ├── useV1Methods.ts             # v1 transaction methods
+│   ├── useHederaMethods.ts         # v2 native Hedera methods
+│   └── useEthereumMethods.ts       # v2 EVM-compatible methods
+├── components/
+│   ├── ConnectionWrapper.tsx        # Session validation wrapper
+│   ├── V1ConnectionModal.tsx       # v1 connection UI
+│   ├── V2NamespaceModal.tsx        # v2 namespace selection
+│   └── ActionButtonList.tsx        # Transaction UI components
+└── utils/
+    ├── sessionMonitor.ts           # Session health monitoring
+    └── methodConfigs.ts            # Method parameter definitions
 ```
 
-This script installs npm dependencies, copies the `.env` template if needed, lints the code and
-builds the project.
+## 🔗 Integration Guide
 
-## Running tests with coverage
+### Step 1: Choose Your Connection Method
 
-To generate a coverage report, run:
+#### For Maximum Compatibility
+Support both v1 and v2 to reach all Hedera wallets:
 
-```sh
+```typescript
+// Support both protocols
+import { DAppConnector } from '@hashgraph/hedera-wallet-connect'  // v1
+import { createAppKit } from '@reown/appkit/react'                 // v2
+```
+
+#### For Modern Apps (v2 Only)
+If targeting newer wallets with v2 support:
+
+```typescript
+import { createAppKit } from '@reown/appkit/react'
+import { HederaAdapter } from '@hashgraph/hedera-wallet-connect'
+```
+
+### Step 2: Understand Namespace Implications
+
+| Namespace | Account Types | Transaction Types | Best For |
+|-----------|--------------|-------------------|----------|
+| `hedera:` | Ed25519 & ECDSA | Native Hedera (HTS, HCS, etc.) | Hedera-native features |
+| `eip155:` | ECDSA only | EVM-compatible | Cross-chain compatibility |
+| Both | All types | All types | Maximum flexibility |
+
+### Step 3: Implement Core Features
+
+#### Connecting a Wallet
+
+```typescript
+// v1 Connection
+const connector = new DAppConnector(
+  metadata,
+  LedgerId.TESTNET,
+  projectId,
+  Object.values(HederaJsonRpcMethod),
+  ['https://walletconnect.hashpack.app']
+)
+await connector.init()
+const session = await connector.connect()
+
+// v2 Connection with namespace selection
+const connectionOptions = {
+  requiredNamespaces: {
+    hedera: {
+      methods: ['hedera_signMessage', 'hedera_executeTransaction'],
+      chains: ['hedera:testnet', 'hedera:mainnet'],
+      events: ['chainChanged', 'accountsChanged']
+    }
+  }
+}
+```
+
+#### Executing Transactions
+
+```typescript
+// Native Hedera transaction
+const transaction = new TransferTransaction()
+  .addHbarTransfer(fromAccount, new Hbar(-1))
+  .addHbarTransfer(toAccount, new Hbar(1))
+
+const result = await signer.signAndExecuteTransaction(transaction)
+
+// EVM-compatible transaction
+const txHash = await provider.request({
+  method: 'eth_sendTransaction',
+  params: [{
+    from: account,
+    to: recipient,
+    value: '0x1',
+    gas: '0x5208'
+  }]
+})
+```
+
+### Step 4: Handle Edge Cases
+
+The demo includes patterns for:
+- **Session Recovery**: Automatic reconnection on page refresh
+- **Error Handling**: Graceful degradation when operations fail
+- **Network Switching**: Handling mainnet/testnet transitions
+- **Account Changes**: Responding to wallet account switches
+- **Disconnection**: Clean session termination
+
+## 🧪 Testing
+
+```bash
+# Run all tests with coverage
+npm run test
+
+# Run specific test suites
+npm run test -- tests/components/V2NamespaceModal.test.tsx
+
+# Generate coverage report
 npm run coverage
 ```
 
-The report will be saved in the `coverage` directory and a summary will be printed in the
-console.
+## 🐳 Docker Support
 
-## Docker
-
-This project includes a `Dockerfile` so you can run the app in a container without installing
-Node.js locally.
-
-1. Build the image
-
-```sh
+```bash
+# Build the image
 docker build -t hedera-app .
+
+# Run with your project ID
+docker run --rm -p 5173:5173 \
+  -e VITE_REOWN_PROJECT_ID=<your_project_id> \
+  hedera-app
 ```
 
-2. Run the container with your project ID
+## 📚 Key Files for Integration Reference
 
-```sh
-docker run --rm -p 5173:5173 -e VITE_REOWN_PROJECT_ID=<your_project_id> hedera-app
+| File | Purpose | Key Patterns |
+|------|---------|--------------|
+| `src/hooks/useDAppConnectorV1.ts` | v1 connection lifecycle | Extension detection, session management |
+| `src/App.tsx` | Main integration example | Protocol selection, namespace handling |
+| `src/config/index.ts` | WalletConnect setup | Adapter configuration, network setup |
+| `src/utils/sessionMonitor.ts` | Session health | Validation, recovery, cleanup |
+
+## ⚠️ Important Considerations
+
+### Account Type Compatibility
+- **Ed25519 accounts**: Only supported in `hedera:` namespace
+- **ECDSA accounts**: Supported in both namespaces
+- Choose namespace based on your user's account types
+
+### Network Configuration
+- Testnet is default for development
+- Mainnet requires explicit configuration
+- RPC URL defaults to hgraph.io (configurable via `VITE_HEDERA_RPC_URL`)
+
+### Session Management
+- Sessions persist across page refreshes
+- Automatic cleanup of invalid sessions
+- Maximum 3 refresh attempts to prevent loops
+
+## 🔍 Debugging
+
+Enable debug output:
+```javascript
+// In browser console
+localStorage.setItem('DEBUG', 'universal-provider')
 ```
 
-The app will be available at <http://localhost:5173>.
+Common issues:
+- **"No signer available"**: Ensure wallet is connected and account is selected
+- **"Extension not detected"**: Wait for extension to load or refresh
+- **"Connection state mismatch"**: Clear session storage and reconnect
+
+## 🤝 Wallet Compatibility
+
+Tested with:
+- **HashPack**: Full v1 and v2 support
+- **Kabila**: v1 support
+- **Other WalletConnect wallets**: Varies by implementation
+
+## 📖 Additional Resources
+
+- [Hedera WalletConnect Library](https://github.com/hashgraph/hedera-wallet-connect)
+- [Reown AppKit Documentation](https://docs.reown.com/appkit/overview)
+- [Hedera Developer Portal](https://docs.hedera.com)
+- [Hedera JSON-RPC Relay](https://github.com/hashgraph/hedera-json-rpc-relay)
+- [WalletConnect Protocol Specs](https://specs.walletconnect.com)
+
+## 🆘 Support
+
+For issues specific to this demo:
+- Open an issue in this repository
+
+For library-specific questions:
+- `@hashgraph/hedera-wallet-connect`: [GitHub Issues](https://github.com/hashgraph/hedera-wallet-connect/issues)
+- Reown AppKit: [Reown Support](https://docs.reown.com)
+
+## 📄 License
+
+Apache 2.0 - See LICENSE file for details

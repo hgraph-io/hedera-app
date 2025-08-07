@@ -61,20 +61,20 @@ describe('config module', () => {
       icons: ['https://avatars.githubusercontent.com/u/31002956'],
     })
     expect(config.networks).toEqual([
-      'native-mainnet',
       'native-testnet',
-      'evm-mainnet',
+      'native-mainnet',
       'evm-testnet',
+      'evm-mainnet',
     ])
     expect(constructorSpy).toHaveBeenCalledTimes(2)
     expect(constructorSpy).toHaveBeenNthCalledWith(1, {
       projectId: 'pid123',
-      networks: ['native-mainnet', 'native-testnet'],
+      networks: ['native-testnet', 'native-mainnet'],
       namespace: 'hedera',
     })
     expect(constructorSpy).toHaveBeenNthCalledWith(2, {
       projectId: 'pid123',
-      networks: ['evm-mainnet', 'evm-testnet'],
+      networks: ['evm-testnet', 'evm-mainnet'],
       namespace: 'eip155',
     })
     expect(initSpy).toHaveBeenCalledWith({
