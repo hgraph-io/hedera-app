@@ -1,23 +1,7 @@
 import { AppKitNetwork } from '@reown/appkit/networks'
-import {
-  HederaProvider,
-  HederaAdapter,
-  HederaChainDefinition,
-  hederaNamespace,
-} from '@hashgraph/hedera-wallet-connect'
-import UniversalProvider from '@walletconnect/universal-provider'
-import { JsonRpcProvider } from 'ethers'
+import { HederaChainDefinition } from '@hashgraph/hedera-wallet-connect'
 
-// Get projectId from https://cloud.reown.com
-export const projectId = import.meta.env.VITE_REOWN_PROJECT_ID
-export const hederaRpcUrl =
-  import.meta.env.VITE_HEDERA_RPC_URL || 'https://testnet.hedera.api.hgraph.io/v1/pk_test/rpc'
-export const jsonRpcProvider = new JsonRpcProvider(hederaRpcUrl)
-
-if (!projectId) {
-  throw new Error('Project ID is not defined')
-}
-
+// Metadata for the app
 export const metadata = {
   name: 'Hedera EIP155 & HIP820 Example',
   description: 'Hedera EIP155 & HIP820 Example',
@@ -25,28 +9,13 @@ export const metadata = {
   icons: ['https://avatars.githubusercontent.com/u/31002956'],
 }
 
+// Network configurations
 export const networks = [
   HederaChainDefinition.Native.Mainnet,
   HederaChainDefinition.Native.Testnet,
-  //should be same as import {hedera, hederaTestnet}from '@reown/appkit/networks'
   HederaChainDefinition.EVM.Mainnet,
   HederaChainDefinition.EVM.Testnet,
 ] as [AppKitNetwork, ...AppKitNetwork[]]
 
-export const nativeHederaAdapter = new HederaAdapter({
-  projectId,
-  networks: [HederaChainDefinition.Native.Mainnet, HederaChainDefinition.Native.Testnet],
-  namespace: hederaNamespace,
-})
-
-export const eip155HederaAdapter = new HederaAdapter({
-  projectId,
-  networks: [HederaChainDefinition.EVM.Mainnet, HederaChainDefinition.EVM.Testnet],
-  namespace: 'eip155',
-})
-
-export const universalProvider = (await HederaProvider.init({
-  projectId,
-  metadata,
-  logger: 'debug',
-})) as unknown as UniversalProvider // avoid type mismatch error due to missing of private properties in HederaProvider
+// Default RPC URL
+export const DEFAULT_RPC_URL = 'https://testnet.hedera.api.hgraph.io/v1/pk_prod_ab2c41b848c0b568e96a31ef0ca2f2fbaa549470/rpc'

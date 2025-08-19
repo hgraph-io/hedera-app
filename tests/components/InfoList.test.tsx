@@ -138,7 +138,9 @@ describe('InfoList', () => {
     selectedNetworkId = 'eip155:295'
 
     const { InfoList } = await import('../../src/components/InfoList')
-    const { rerender } = render(<InfoList hash="0x1" txId="" signedMsg="" nodes={[]} lastFunctionResult={null} />)
+    const { rerender } = render(
+      <InfoList hash="0x1" txId="" signedMsg="" nodes={[]} lastFunctionResult={null} />,
+    )
 
     // Wait for any async effects to complete
     await waitFor(() => {
@@ -151,7 +153,9 @@ describe('InfoList', () => {
     selectedNetworkId = 'eip155:296'
 
     const { InfoList } = await import('../../src/components/InfoList')
-    const { rerender } = render(<InfoList hash="0x1" txId="" signedMsg="" nodes={[]} lastFunctionResult={null} />)
+    const { rerender } = render(
+      <InfoList hash="0x1" txId="" signedMsg="" nodes={[]} lastFunctionResult={null} />,
+    )
 
     // Wait for any async effects to complete
     await waitFor(() => {

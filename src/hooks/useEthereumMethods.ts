@@ -3,6 +3,7 @@ import {
   BrowserProvider,
   formatEther,
   JsonRpcSigner,
+  JsonRpcProvider,
   parseEther,
   getBigInt,
   hexlify,
@@ -13,7 +14,6 @@ import {
 import { HederaProvider } from '@hashgraph/hedera-wallet-connect'
 import { eip712Types } from '../utils/eip712'
 import { toEvmAddress } from '../utils/hedera'
-import { jsonRpcProvider } from '../config'
 
 export interface EthSendTransactionParams {
   to: string
@@ -116,6 +116,7 @@ interface UseEthereumMethodsProps {
   ethTxHash: string
   sendHash: (hash: string) => void
   sendSignMsg: (msg: string) => void
+  jsonRpcProvider?: JsonRpcProvider
 }
 
 export const useEthereumMethods = ({
@@ -125,6 +126,7 @@ export const useEthereumMethods = ({
   ethTxHash,
   sendHash,
   sendSignMsg,
+  jsonRpcProvider,
 }: UseEthereumMethodsProps) => {
   const [signedEthTx, setSignedEthTx] = useState<string>()
 
@@ -148,10 +150,12 @@ export const useEthereumMethods = ({
             >
           >
         )?.eip155?.httpProviders?.[chainId]
-      : {
-          request: ({ method, params }: { method: string; params: unknown[] }) =>
-            jsonRpcProvider.send(method, params as never[]),
-        }
+      : jsonRpcProvider
+        ? {
+            request: ({ method, params }: { method: string; params: unknown[] }) =>
+              jsonRpcProvider.send(method, params as never[]),
+          }
+        : undefined
 
   const execute = async (methodName: string, params: Record<string, string>) => {
     switch (methodName) {

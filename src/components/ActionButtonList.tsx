@@ -8,6 +8,7 @@ import {
   useAppKitProvider,
 } from '@reown/appkit/react'
 import { HederaProvider } from '@hashgraph/hedera-wallet-connect'
+import { JsonRpcProvider } from 'ethers'
 import { Modal } from './Modal'
 import { getMethodConfig, FieldConfig } from '../utils/methodConfigs'
 import { FunctionResult } from '../App'
@@ -22,6 +23,7 @@ interface ActionButtonListProps {
   ethTxHash: string
   setLastFunctionResult: (result: FunctionResult | null) => void
   onDisconnect?: () => void
+  jsonRpcProvider?: JsonRpcProvider
 }
 
 export const ActionButtonList = ({
@@ -32,6 +34,7 @@ export const ActionButtonList = ({
   ethTxHash,
   setLastFunctionResult,
   onDisconnect,
+  jsonRpcProvider,
 }: ActionButtonListProps) => {
   const { disconnect } = useDisconnect()
   const { chainId } = useAppKitNetworkCore()
@@ -54,6 +57,7 @@ export const ActionButtonList = ({
     ethTxHash,
     sendHash,
     sendSignMsg,
+    jsonRpcProvider,
   })
 
   // Modal state

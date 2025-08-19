@@ -54,7 +54,7 @@ describe('App', () => {
   it('handles disconnect error when session has eip155 namespace', async () => {
     // Setup: mock a failed disconnect
     disconnectMock.mockRejectedValue(new TypeError('Mock disconnect error'))
-    
+
     // Get the mocked universalProvider
     const mockUniversalProvider = (config as any).universalProvider
 
@@ -94,7 +94,7 @@ describe('App', () => {
   it('clears state when disconnect is successful', async () => {
     // Setup: mock a successful disconnect
     disconnectMock.mockResolvedValue(undefined)
-    
+
     // Get the mocked universalProvider
     const mockUniversalProvider = (config as any).universalProvider
 
@@ -126,7 +126,7 @@ describe('App', () => {
   it('calls clearState on pairing_delete event', async () => {
     // Setup: mock a successful disconnect
     disconnectMock.mockResolvedValue(undefined)
-    
+
     // Get the mocked universalProvider
     const mockUniversalProvider = (config as any).universalProvider
 
@@ -140,9 +140,10 @@ describe('App', () => {
     render(<App />)
 
     // Get the pairing_delete handler
-    const pairingDeleteHandler = mockUniversalProvider.client.core.pairing.events.on.mock.calls.find(
-      (call: any) => call[0] === 'pairing_delete',
-    )?.[1]
+    const pairingDeleteHandler =
+      mockUniversalProvider.client.core.pairing.events.on.mock.calls.find(
+        (call: any) => call[0] === 'pairing_delete',
+      )?.[1]
 
     expect(pairingDeleteHandler).toBeDefined()
 

@@ -19,24 +19,33 @@ implementation see <https://github.com/hgraph-io/hedera-wallet>.
 
 ## Getting started
 
-1. Fill out the .env file with a [Reown](https://cloud.reown.com) project id.
+1. Create an [hgraph](https://dashboard.hgraph.com) account to get your API key:
+   - Sign up at https://dashboard.hgraph.com
+   - Navigate to your dashboard to find your API key
+   - Keep this key handy for step 5
 
-```sh
-## copy and then update the .env file
-cp .env.example .env
-```
+2. Get a [Reown](https://dashboard.reown.com) project ID:
+   - Sign up at https://dashboard.reown.com
+   - Create a new project to get your project ID
 
-2. Install dependencies
+3. Install dependencies
 
 ```sh
 npm install
 ```
 
-3. Run the app
+4. Run the app
 
 ```sh
 npm run dev
 ```
+
+5. Configure the app when it starts:
+   - Enter your Reown Project ID in the first field
+   - Enter your hgraph RPC URL in the second field using this format:
+     `https://testnet.hedera.api.hgraph.io/v1/YOUR_API_KEY/rpc`
+   - Replace `YOUR_API_KEY` with your actual hgraph API key from step 1
+   - Click "Initialize" to start the app
 
 ## Key considerations when integrating Hedera
 
