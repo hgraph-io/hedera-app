@@ -1,29 +1,41 @@
 export class SessionMonitor {
-  private intervalId: NodeJS.Timer | null = null
-  private callback: () => void
-  private intervalMs: number
+  private universalProvider: any
 
-  constructor(callback: () => void, intervalMs = 5000) {
-    this.callback = callback
-    this.intervalMs = intervalMs
+  constructor(universalProvider: any) {
+    this.universalProvider = universalProvider
   }
 
-  start() {
-    if (this.intervalId) {
-      this.stop()
+  async validateSession(): Promise<boolean> {
+    try {
+      if (!this.universalProvider?.session) return false
+      
+      // Check if the session is still valid
+      const session = this.universalProvider.session
+      if (!session.topic || !session.namespaces) return false
+      
+      // Check if session hasn't expired
+      if (session.expiry && Date.now() / 1000 > session.expiry) {
+        console.warn('Session expired')
+        return false
+      }
+      
+      return true
+    } catch (error) {
+      console.error('Session validation error:', error)
+      return false
     }
-    this.intervalId = setInterval(this.callback, this.intervalMs)
   }
 
-  stop() {
-    if (this.intervalId) {
-      clearInterval(this.intervalId)
-      this.intervalId = null
+  async cleanupInvalidSessions(): Promise<void> {
+    try {
+      const isValid = await this.validateSession()
+      if (!isValid && this.universalProvider?.session) {
+        console.log('Cleaning up invalid session')
+        await this.universalProvider.disconnect?.()
+      }
+    } catch (error) {
+      console.error('Session cleanup error:', error)
     }
-  }
-
-  isRunning() {
-    return this.intervalId !== null
   }
 }
 
