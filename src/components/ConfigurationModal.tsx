@@ -9,7 +9,13 @@ interface ConfigurationModalProps {
   currentRpcUrl?: string
 }
 
-export function ConfigurationModal({ isOpen, onClose, onSave, currentProjectId, currentRpcUrl }: ConfigurationModalProps) {
+export function ConfigurationModal({
+  isOpen,
+  onClose,
+  onSave,
+  currentProjectId,
+  currentRpcUrl,
+}: ConfigurationModalProps) {
   const [projectId, setProjectId] = useState('')
   const [rpcUrl, setRpcUrl] = useState(DEFAULT_RPC_URL)
 
@@ -17,7 +23,8 @@ export function ConfigurationModal({ isOpen, onClose, onSave, currentProjectId, 
   useEffect(() => {
     if (isOpen) {
       const savedProjectId = currentProjectId || localStorage.getItem('reownProjectId') || ''
-      const savedRpcUrl = currentRpcUrl || localStorage.getItem('hederaRpcUrl') || DEFAULT_RPC_URL
+      const savedRpcUrl =
+        currentRpcUrl || localStorage.getItem('hederaRpcUrl') || DEFAULT_RPC_URL
 
       setProjectId(savedProjectId)
       setRpcUrl(savedRpcUrl)

@@ -94,12 +94,11 @@ export function V2NamespaceModal({ isOpen, onClose, onConnect }: V2NamespaceModa
               fontSize: '14px',
             }}
           >
-            <strong>Note:</strong> Native Hedera namespace supports all account types (Ed25519 and
-            ECDSA), while EVM namespace only supports ECDSA accounts.
+            <strong>Note:</strong> Native Hedera namespace supports all account types (Ed25519
+            and ECDSA), while EVM namespace only supports ECDSA accounts.
           </div>
         </div>
       </div>
     </div>
   )
 }
-

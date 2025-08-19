@@ -170,7 +170,9 @@ export function App() {
         stack: error instanceof Error ? error.stack : undefined,
       })
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      alert(`Failed to initialize configuration: ${errorMessage}. Please check your settings and try again.`)
+      alert(
+        `Failed to initialize configuration: ${errorMessage}. Please check your settings and try again.`,
+      )
     }
   }
 
@@ -225,11 +227,91 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
       // Store the selected namespace in session storage for reference
       sessionStorage.setItem('selectedHWCv2Namespace', namespace)
 
-      // The namespaces are already configured in the universal provider
-      // Just open the modal - the provider will handle the namespace requirements
-      console.log('🚀 Opening V2 modal with namespace preference:', namespace)
+      // Store the namespace configuration for the provider to use
+      let connectParams: any = {}
 
-      // Open the modal
+      if (namespace === 'hedera') {
+        connectParams = {
+          // Use optionalNamespaces for better wallet compatibility
+          optionalNamespaces: {
+            hedera: {
+              methods: [
+                'hedera_getAccountBalance',
+                'hedera_getAccountInfo',
+                'hedera_getTransactionReceipt',
+                'hedera_executeTransaction',
+                'hedera_signMessage',
+                'hedera_signTransaction',
+                'hedera_signAndExecuteTransaction',
+                'hedera_signAndExecuteQuery',
+              ],
+              chains: ['hedera:testnet', 'hedera:mainnet'],
+              events: ['chainChanged', 'accountsChanged'],
+            },
+          },
+        }
+      } else if (namespace === 'eip155') {
+        connectParams = {
+          // Use optionalNamespaces for better wallet compatibility
+          optionalNamespaces: {
+            eip155: {
+              methods: [
+                'eth_sendTransaction',
+                'eth_signTransaction',
+                'eth_sign',
+                'personal_sign',
+                'eth_signTypedData',
+                'eth_signTypedData_v4',
+                'eth_accounts',
+                'eth_chainId',
+              ],
+              chains: ['eip155:296', 'eip155:295'],
+              events: ['chainChanged', 'accountsChanged'],
+            },
+          },
+        }
+      } else {
+        // 'both' - use both as optional namespaces
+        connectParams = {
+          optionalNamespaces: {
+            hedera: {
+              methods: [
+                'hedera_getAccountBalance',
+                'hedera_getAccountInfo',
+                'hedera_getTransactionReceipt',
+                'hedera_executeTransaction',
+                'hedera_signMessage',
+                'hedera_signTransaction',
+                'hedera_signAndExecuteTransaction',
+                'hedera_signAndExecuteQuery',
+              ],
+              chains: ['hedera:testnet', 'hedera:mainnet'],
+              events: ['chainChanged', 'accountsChanged'],
+            },
+            eip155: {
+              methods: [
+                'eth_sendTransaction',
+                'eth_signTransaction',
+                'eth_sign',
+                'personal_sign',
+                'eth_signTypedData',
+                'eth_signTypedData_v4',
+                'eth_accounts',
+                'eth_chainId',
+              ],
+              chains: ['eip155:296', 'eip155:295'],
+              events: ['chainChanged', 'accountsChanged'],
+            },
+          },
+        }
+      }
+
+      console.log('🚀 Opening V2 modal with namespaces:', connectParams)
+
+      // Store the namespace params for the provider to use when connect is called
+      sessionStorage.setItem('hwcV2ConnectionParams', JSON.stringify(connectParams))
+
+      // Open the modal - AppKit will internally call connect on the universal provider
       await open({
         view: 'Connect',
       })
@@ -281,7 +363,6 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
 
   // Track connection mode - check v2 first since universalProvider might be shared
   useEffect(() => {
-
     // Check v2 connection first (universalProvider with namespaces)
     if (
       appKitConfig?.universalProvider?.session &&
@@ -397,7 +478,10 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
   // V1 method handlers
   const handleV1Transfer = async () => {
     try {
-      const result = await v1Methods.executeMethod('transferHbar', { to: '0.0.123456', amount: 1 })
+      const result = await v1Methods.executeMethod('transferHbar', {
+        to: '0.0.123456',
+        amount: 1,
+      })
       if (result) {
         setTransactionId(result.transactionId)
         setLastFunctionResult({
@@ -464,21 +548,26 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
 
   // Get namespace and address info for UI
   const v2Namespace = getCurrentV2Namespace()
-  
+
   // Get the appropriate account based on namespace
-  const hederaAccount = appKitConfig?.universalProvider?.session?.namespaces?.hedera?.accounts?.[0]?.split(':').pop()
-  const eip155Account = appKitConfig?.universalProvider?.session?.namespaces?.eip155?.accounts?.[0]?.split(':').pop()
-  
+  const hederaAccount =
+    appKitConfig?.universalProvider?.session?.namespaces?.hedera?.accounts?.[0]
+      ?.split(':')
+      .pop()
+  const eip155Account =
+    appKitConfig?.universalProvider?.session?.namespaces?.eip155?.accounts?.[0]
+      ?.split(':')
+      .pop()
+
   // For display purposes, show the appropriate account
-  const v2Account = v2Namespace === 'hedera' || v2Namespace === 'both'
-    ? hederaAccount
-    : eip155Account
+  const v2Account =
+    v2Namespace === 'hedera' || v2Namespace === 'both' ? hederaAccount : eip155Account
 
   // Get hooks for V2 operations
   const { executeHederaMethod } = useHederaMethods({
     walletProvider: connectionMode === 'v2' ? appKitConfig?.universalProvider : null,
     chainId: 296,
-    account: hederaAccount,  // Always use Hedera account for Hedera methods
+    account: hederaAccount, // Always use Hedera account for Hedera methods
     sendHash: setTransactionHash,
     sendSignedMsg: setSignedMsg,
     sendTransactionId: setTransactionId,
@@ -489,7 +578,7 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
   const { executeEthMethod } = useEthereumMethods({
     walletProvider: connectionMode === 'v2' ? appKitConfig?.universalProvider : null,
     chainId: 296,
-    address: eip155Account,  // Always use EIP155 account for Ethereum methods
+    address: eip155Account, // Always use EIP155 account for Ethereum methods
     ethTxHash: transactionHash,
     sendHash: setTransactionHash,
     sendSignMsg: setSignedMsg,
@@ -515,9 +604,17 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
         <h1>Hedera App with HWC v1 & v2 Support</h1>
 
         {/* Connection Status */}
-        <div style={{ marginBottom: '20px', padding: '10px', backgroundColor: '#f0f0f0', borderRadius: '8px' }}>
+        <div
+          style={{
+            marginBottom: '20px',
+            padding: '10px',
+            backgroundColor: '#f0f0f0',
+            borderRadius: '8px',
+          }}
+        >
           <p style={{ margin: '5px 0' }}>
-            <strong>Connection Mode:</strong> {connectionMode === 'none' ? 'Not Connected' : connectionMode.toUpperCase()}
+            <strong>Connection Mode:</strong>{' '}
+            {connectionMode === 'none' ? 'Not Connected' : connectionMode.toUpperCase()}
           </p>
           {connectionMode === 'v1' && (
             <p style={{ margin: '5px 0' }}>
@@ -538,7 +635,14 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
 
         {/* Connection Buttons */}
         {connectionMode === 'none' ? (
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', justifyContent: 'center' }}>
+          <div
+            style={{
+              display: 'flex',
+              gap: '10px',
+              marginBottom: '20px',
+              justifyContent: 'center',
+            }}
+          >
             <button
               onClick={() => setShowV1Modal(true)}
               className="primary-button"
@@ -589,12 +693,23 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
             title={`V2 Connection Methods (${v2Namespace})`}
             methods={
               v2Namespace === 'hedera' || v2Namespace === 'both'
-                ? [{ name: 'Execute Hedera Method', action: () => executeHederaMethod('hedera_getAccountInfo', {}) }]
+                ? [
+                    {
+                      name: 'Execute Hedera Method',
+                      action: () => executeHederaMethod('hedera_getAccountInfo', {}),
+                    },
+                  ]
                 : []
             }
             ethMethods={
               v2Namespace === 'eip155' || v2Namespace === 'both'
-                ? [{ name: 'Execute ETH Method', action: () => executeEthMethod('eth_getBalance', { address: eip155Account }) }]
+                ? [
+                    {
+                      name: 'Execute ETH Method',
+                      action: () =>
+                        executeEthMethod('eth_getBalance', { address: eip155Account }),
+                    },
+                  ]
                 : []
             }
             onClearState={clearState}

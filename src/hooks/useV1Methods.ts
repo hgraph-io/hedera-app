@@ -114,4 +114,3 @@ export function useV1Methods(signers: DAppSigner[]) {
     executeMethod,
   }
 }
-

@@ -18,4 +18,5 @@ export const networks = [
 ] as [AppKitNetwork, ...AppKitNetwork[]]
 
 // Default RPC URL
-export const DEFAULT_RPC_URL = 'https://testnet.hedera.api.hgraph.io/v1/pk_prod_ab2c41b848c0b568e96a31ef0ca2f2fbaa549470/rpc'
+export const DEFAULT_RPC_URL =
+  'https://testnet.hedera.api.hgraph.io/v1/pk_prod_ab2c41b848c0b568e96a31ef0ca2f2fbaa549470/rpc'
