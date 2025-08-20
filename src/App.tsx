@@ -821,11 +821,11 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
             if (success) {
               setShowV1Modal(false)
             }
+            return success
           }}
-          getAvailableExtensions={v1Connection.getAvailableExtensions}
-          refreshExtensionDetection={v1Connection.refreshExtensionDetection}
-          initializeConnector={v1Connection.initializeConnector}
+          availableExtensions={v1Connection.getAvailableExtensions() || []}
           isDetectingExtensions={v1Connection.isDetectingExtensions}
+          onRefreshExtensions={v1Connection.refreshExtensionDetection}
         />
 
         {/* V2 Namespace Selection Modal */}
