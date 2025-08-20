@@ -59,8 +59,8 @@ export function App() {
 
       const eip155HederaAdapter = new HederaAdapter({
         projectId,
-        // List testnet first to prefer it as default
-        networks: [HederaChainDefinition.EVM.Testnet, HederaChainDefinition.EVM.Mainnet],
+        // Only testnet for EVM connections
+        networks: [HederaChainDefinition.EVM.Testnet],
         namespace: 'eip155',
       })
 
@@ -101,7 +101,7 @@ export function App() {
         optionalNamespaces: {
           eip155: {
             methods: eip155Methods,
-            chains: ['eip155:296', 'eip155:295'],
+            chains: ['eip155:296'], // Only testnet for EVM
             events: ['chainChanged', 'accountsChanged'],
           },
         },
@@ -266,8 +266,8 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
                 'eth_accounts',
                 'eth_chainId',
               ],
-              // Put testnet (296) first to prefer it over mainnet (295)
-              chains: ['eip155:296', 'eip155:295'],
+              // Only testnet (296) for EVM connections
+              chains: ['eip155:296'],
               events: ['chainChanged', 'accountsChanged'],
             },
           },
@@ -304,8 +304,8 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
                 'eth_accounts',
                 'eth_chainId',
               ],
-              // Put testnet (296) first to prefer it over mainnet (295)
-              chains: ['eip155:296', 'eip155:295'],
+              // Only testnet (296) for EVM connections
+              chains: ['eip155:296'],
               events: ['chainChanged', 'accountsChanged'],
             },
           },
