@@ -271,9 +271,10 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
           },
         }
       } else {
-        // 'both' - use both as optional namespaces
+        // 'both' - use requiredNamespaces for hedera and optionalNamespaces for eip155
+        // This seems to work better with UniversalProvider
         connectParams = {
-          optionalNamespaces: {
+          requiredNamespaces: {
             hedera: {
               methods: [
                 'hedera_getAccountBalance',
@@ -288,6 +289,8 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
               chains: ['hedera:testnet', 'hedera:mainnet'],
               events: ['chainChanged', 'accountsChanged'],
             },
+          },
+          optionalNamespaces: {
             eip155: {
               methods: [
                 'eth_sendTransaction',
@@ -383,6 +386,21 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
         self: appKitConfig.universalProvider.session.self,
       })
 
+      // Log what namespace will be detected
+      const detectedNamespaces = appKitConfig.universalProvider.session.namespaces
+      console.log('🔍 Namespace detection:', {
+        hasHedera: !!detectedNamespaces?.hedera,
+        hasEip155: !!detectedNamespaces?.eip155,
+        willBeDetectedAs:
+          detectedNamespaces?.hedera && detectedNamespaces?.eip155
+            ? 'both'
+            : detectedNamespaces?.hedera
+              ? 'hedera'
+              : detectedNamespaces?.eip155
+                ? 'eip155'
+                : 'none',
+      })
+
       // Log namespace details
       console.log('📦 V2 Namespaces Detail:', {
         hasHedera: !!appKitConfig.universalProvider.session.namespaces?.hedera,
@@ -433,14 +451,43 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
         // Clear v2 namespace marker
         sessionStorage.removeItem('selectedHWCv2Namespace')
         sessionStorage.removeItem('hwcV2ConnectionOptions')
+        sessionStorage.removeItem('hwcV2ConnectionParams')
 
         // Always try to disconnect if there's a session
         if (appKitConfig?.universalProvider?.session) {
+          // First disconnect from AppKit
           await disconnectV2()
-          // Clear the session from the universal provider
-          if (appKitConfig.universalProvider.session) {
+          
+          // Then disconnect the universal provider itself
+          if (appKitConfig.universalProvider.disconnect) {
             await appKitConfig.universalProvider.disconnect()
           }
+          
+          // Clear the persisted WalletConnect session data from localStorage
+          // This prevents auto-reconnect on page refresh
+          const wcKeys = Object.keys(localStorage).filter(key => 
+            key.startsWith('wc@') || 
+            key.startsWith('walletconnect') ||
+            key.startsWith('WC_') ||
+            key.includes('walletConnect')
+          )
+          wcKeys.forEach(key => {
+            localStorage.removeItem(key)
+          })
+          
+          // Also clear any Reown/AppKit specific storage
+          const reownKeys = Object.keys(localStorage).filter(key =>
+            key.includes('reown') || 
+            key.includes('appkit') ||
+            key.includes('@w3m') ||
+            key.includes('W3M_')
+          )
+          reownKeys.forEach(key => {
+            // Keep the project ID and RPC URL
+            if (!key.includes('reownProjectId') && !key.includes('hederaRpcUrl')) {
+              localStorage.removeItem(key)
+            }
+          })
         }
 
         // Clean up any invalid sessions
@@ -540,6 +587,7 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
   const getCurrentV2Namespace = () => {
     if (!appKitConfig?.universalProvider?.session) return null
     const namespaces = appKitConfig.universalProvider.session.namespaces
+    console.log('Current session namespaces:', namespaces)
     if (namespaces?.hedera && namespaces?.eip155) return 'both'
     if (namespaces?.hedera) return 'hedera'
     if (namespaces?.eip155) return 'eip155'
@@ -688,10 +736,10 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
           />
         )}
 
-        {connectionMode === 'v2' && v2Namespace && (
-          <ActionButtonList
-            title={`V2 Connection Methods (${v2Namespace})`}
-            methods={
+        {connectionMode === 'v2' &&
+          v2Namespace &&
+          (() => {
+            const hederaMethods =
               v2Namespace === 'hedera' || v2Namespace === 'both'
                 ? [
                     {
@@ -700,8 +748,8 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
                     },
                   ]
                 : []
-            }
-            ethMethods={
+
+            const ethMethods =
               v2Namespace === 'eip155' || v2Namespace === 'both'
                 ? [
                     {
@@ -711,15 +759,27 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
                     },
                   ]
                 : []
-            }
-            onClearState={clearState}
-            onDisconnect={() => {
-              clearState()
-              setConnectionMode('none')
-            }}
-            jsonRpcProvider={appKitConfig?.jsonRpcProvider}
-          />
-        )}
+
+            console.log('Rendering methods for namespace:', v2Namespace, {
+              hederaMethods: hederaMethods.length,
+              ethMethods: ethMethods.length,
+              eip155Account,
+            })
+
+            return (
+              <ActionButtonList
+                title={`V2 Connection Methods (${v2Namespace})`}
+                methods={hederaMethods}
+                ethMethods={ethMethods}
+                onClearState={clearState}
+                onDisconnect={() => {
+                  clearState()
+                  setConnectionMode('none')
+                }}
+                jsonRpcProvider={appKitConfig?.jsonRpcProvider}
+              />
+            )
+          })()}
 
         <div className="advice">
           <div style={{ fontSize: '12px', color: '#666' }}>
