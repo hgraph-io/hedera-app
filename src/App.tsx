@@ -758,10 +758,6 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
               { name: 'Sign Message', action: handleV1SignMessage },
             ]}
             onClearState={clearState}
-            onDisconnect={() => {
-              clearState()
-              setConnectionMode('none')
-            }}
             jsonRpcProvider={appKitConfig?.jsonRpcProvider}
           />
         )}
@@ -802,10 +798,6 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
                 methods={hederaMethods}
                 ethMethods={ethMethods}
                 onClearState={clearState}
-                onDisconnect={() => {
-                  clearState()
-                  setConnectionMode('none')
-                }}
                 jsonRpcProvider={appKitConfig?.jsonRpcProvider}
               />
             )
