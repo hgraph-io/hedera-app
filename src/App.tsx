@@ -213,12 +213,43 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
     setLastFunctionResult(null)
   }
 
-  // Initialize session monitor
+  // Initialize session monitor and listen for connection events
   useEffect(() => {
     if (appKitConfig?.universalProvider) {
       sessionMonitorRef.current = new SessionMonitor(appKitConfig.universalProvider)
+
+      // Listen for session events to update state immediately
+      const handleSessionUpdate = () => {
+        console.log('Session update detected, checking connection state...')
+        // Force a re-check of the connection state
+        setConnectionMode((prev) => {
+          // Trigger the connection mode detection logic
+          const hasV1SessionMarker = sessionStorage.getItem('hwcV1Session')
+
+          if (hasV1SessionMarker && v1Connection.isConnected && v1Connection.session) {
+            return 'v1'
+          } else if (
+            appKitConfig?.universalProvider?.session &&
+            (appKitConfig.universalProvider.session.namespaces?.hedera ||
+              appKitConfig.universalProvider.session.namespaces?.eip155)
+          ) {
+            console.log('✅ V2 Connection detected after session update')
+            return 'v2'
+          }
+          return 'none'
+        })
+      }
+
+      // Listen for connection events
+      appKitConfig.universalProvider.on('connect', handleSessionUpdate)
+      appKitConfig.universalProvider.on('session_update', handleSessionUpdate)
+
+      return () => {
+        appKitConfig.universalProvider.off('connect', handleSessionUpdate)
+        appKitConfig.universalProvider.off('session_update', handleSessionUpdate)
+      }
     }
-  }, [appKitConfig])
+  }, [appKitConfig, v1Connection.isConnected, v1Connection.session])
 
   // Handle V2 connection with namespace selection
   const handleV2Connect = async (namespace: 'hedera' | 'eip155' | 'both') => {
@@ -321,6 +352,19 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
       await open({
         view: 'Connect',
       })
+
+      // Poll for session establishment to update UI immediately
+      const pollInterval = setInterval(() => {
+        if (appKitConfig?.universalProvider?.session) {
+          console.log('V2 session detected via polling, updating state')
+          clearInterval(pollInterval)
+          // Trigger state update
+          setConnectionMode('v2')
+        }
+      }, 500)
+
+      // Stop polling after 30 seconds
+      setTimeout(() => clearInterval(pollInterval), 30000)
     } catch (error) {
       console.error('V2 Connection error:', error)
 
