@@ -34,13 +34,16 @@ export function V1ConnectionModal({
   const handleQRConnection = async () => {
     setIsConnecting(true)
     setError(null)
+    
+    // Close the V1 modal to allow WalletConnect QR modal to display properly
+    onClose()
 
     try {
       const success = await onConnect()
-      if (success) {
-        onClose()
-      } else {
+      if (!success) {
+        // Reopen the V1 modal if connection failed
         setError('Connection failed. Please try again.')
+        // Note: The modal will be reopened by the parent component if needed
       }
     } catch (err) {
       if (err instanceof Error) {
