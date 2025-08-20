@@ -3,6 +3,11 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this
 repository.
 
+## Code Quality Rules
+
+**IMPORTANT**: After making any code changes, you MUST run `npm run prettier` to format the code
+before committing. This ensures consistent code formatting across the codebase.
+
 ## Commands
 
 ### Development

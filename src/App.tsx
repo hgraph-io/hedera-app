@@ -457,32 +457,34 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
         if (appKitConfig?.universalProvider?.session) {
           // First disconnect from AppKit
           await disconnectV2()
-          
+
           // Then disconnect the universal provider itself
           if (appKitConfig.universalProvider.disconnect) {
             await appKitConfig.universalProvider.disconnect()
           }
-          
+
           // Clear the persisted WalletConnect session data from localStorage
           // This prevents auto-reconnect on page refresh
-          const wcKeys = Object.keys(localStorage).filter(key => 
-            key.startsWith('wc@') || 
-            key.startsWith('walletconnect') ||
-            key.startsWith('WC_') ||
-            key.includes('walletConnect')
+          const wcKeys = Object.keys(localStorage).filter(
+            (key) =>
+              key.startsWith('wc@') ||
+              key.startsWith('walletconnect') ||
+              key.startsWith('WC_') ||
+              key.includes('walletConnect'),
           )
-          wcKeys.forEach(key => {
+          wcKeys.forEach((key) => {
             localStorage.removeItem(key)
           })
-          
+
           // Also clear any Reown/AppKit specific storage
-          const reownKeys = Object.keys(localStorage).filter(key =>
-            key.includes('reown') || 
-            key.includes('appkit') ||
-            key.includes('@w3m') ||
-            key.includes('W3M_')
+          const reownKeys = Object.keys(localStorage).filter(
+            (key) =>
+              key.includes('reown') ||
+              key.includes('appkit') ||
+              key.includes('@w3m') ||
+              key.includes('W3M_'),
           )
-          reownKeys.forEach(key => {
+          reownKeys.forEach((key) => {
             // Keep the project ID and RPC URL
             if (!key.includes('reownProjectId') && !key.includes('hederaRpcUrl')) {
               localStorage.removeItem(key)

@@ -34,7 +34,7 @@ export function V1ConnectionModal({
   const handleQRConnection = async () => {
     setIsConnecting(true)
     setError(null)
-    
+
     // Close the V1 modal to allow WalletConnect QR modal to display properly
     onClose()
 
