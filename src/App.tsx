@@ -364,10 +364,16 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
     checkV1Session()
   }, []) // Only on mount
 
-  // Track connection mode - check v2 first since universalProvider might be shared
+  // Track connection mode - check V1 first since both V1 and V2 use universalProvider
   useEffect(() => {
-    // Check v2 connection first (universalProvider with namespaces)
-    if (
+    // Check if this is a V1 connection first (has V1 session marker)
+    const hasV1SessionMarker = sessionStorage.getItem('hwcV1Session')
+
+    if (hasV1SessionMarker && v1Connection.isConnected && v1Connection.session) {
+      // This is a V1 connection
+      console.log('✅ V1 Connection Detected (from session marker)')
+      setConnectionMode('v1')
+    } else if (
       appKitConfig?.universalProvider?.session &&
       (appKitConfig.universalProvider.session.namespaces?.hedera ||
         appKitConfig.universalProvider.session.namespaces?.eip155)
@@ -415,9 +421,6 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
 
       // This is definitely a v2 connection
       setConnectionMode('v2')
-    } else if (v1Connection.isConnected && v1Connection.session) {
-      // This is a v1 connection
-      setConnectionMode('v1')
     } else {
       setConnectionMode('none')
     }
