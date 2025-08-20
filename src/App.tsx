@@ -450,6 +450,27 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
     try {
       if (connectionMode === 'v1') {
         await v1Connection.disconnect()
+
+        // V1 also uses universalProvider, so we need to disconnect it too
+        if (appKitConfig?.universalProvider?.session) {
+          try {
+            await appKitConfig.universalProvider.disconnect()
+          } catch (error) {
+            console.log('UniversalProvider disconnect error (V1):', error)
+          }
+        }
+
+        // Clear any WalletConnect session data to prevent confusion
+        const wcKeys = Object.keys(localStorage).filter(
+          (key) =>
+            key.startsWith('wc@') ||
+            key.startsWith('walletconnect') ||
+            key.startsWith('WC_') ||
+            key.includes('walletConnect'),
+        )
+        wcKeys.forEach((key) => {
+          localStorage.removeItem(key)
+        })
       } else if (connectionMode === 'v2') {
         // Clear v2 namespace marker
         sessionStorage.removeItem('selectedHWCv2Namespace')
