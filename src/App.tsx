@@ -245,9 +245,21 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
       appKitConfig.universalProvider.on('connect', handleSessionUpdate)
       appKitConfig.universalProvider.on('session_update', handleSessionUpdate)
 
+      // Also poll for session changes in case events are missed
+      const pollInterval = setInterval(() => {
+        if (
+          appKitConfig?.universalProvider?.session &&
+          (appKitConfig.universalProvider.session.namespaces?.hedera ||
+            appKitConfig.universalProvider.session.namespaces?.eip155)
+        ) {
+          handleSessionUpdate()
+        }
+      }, 1000)
+
       return () => {
         appKitConfig.universalProvider.off('connect', handleSessionUpdate)
         appKitConfig.universalProvider.off('session_update', handleSessionUpdate)
+        clearInterval(pollInterval)
       }
     }
   }, [appKitConfig, v1Connection.isConnected, v1Connection.session])
@@ -354,8 +366,29 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
         view: 'Connect',
       })
 
-      // The AppKit hooks will detect the connection and update the state automatically
-      // No need for polling since we're now monitoring isAppKitConnected
+      // Poll for session establishment after modal opens
+      // The session might not be immediately available when the modal closes
+      const pollForSession = async () => {
+        let attempts = 0
+        const maxAttempts = 30 // 15 seconds total
+
+        while (attempts < maxAttempts) {
+          if (appKitConfig?.universalProvider?.session) {
+            console.log('✅ V2 Session detected after', attempts * 500, 'ms')
+            // Force a state update to ensure UI reflects the connection
+            setConnectionMode('v2')
+            return
+          }
+
+          await new Promise((resolve) => setTimeout(resolve, 500))
+          attempts++
+        }
+
+        console.warn('⚠️ V2 Session not detected after 15 seconds')
+      }
+
+      // Start polling for session establishment
+      pollForSession()
     } catch (error) {
       console.error('V2 Connection error:', error)
 
@@ -412,14 +445,16 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
       console.log('✅ V1 Connection Detected (from session marker)')
       setConnectionMode('v1')
     } else if (
-      isAppKitConnected &&
-      appKitAddress &&
+      // Check multiple conditions for V2 connection
+      // Sometimes session is available before AppKit hooks update
       appKitConfig?.universalProvider?.session &&
       (appKitConfig.universalProvider.session.namespaces?.hedera ||
         appKitConfig.universalProvider.session.namespaces?.eip155)
     ) {
       // Log V2 connection details
       console.log('✅ V2 Connection Established:', {
+        isAppKitConnected,
+        appKitAddress,
         topic: appKitConfig.universalProvider.session.topic,
         peer: appKitConfig.universalProvider.session.peer,
         namespaces: appKitConfig.universalProvider.session.namespaces,
@@ -461,6 +496,10 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
 
       // This is definitely a v2 connection
       setConnectionMode('v2')
+    } else if (isAppKitConnected && appKitAddress && !hasV1SessionMarker) {
+      // AppKit shows connected but session might still be establishing
+      console.log('⏳ AppKit connected but waiting for session...')
+      setConnectionMode('none')
     } else {
       setConnectionMode('none')
     }
