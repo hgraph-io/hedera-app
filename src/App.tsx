@@ -1,6 +1,6 @@
 import './App.css'
 import { useState, useEffect, useRef } from 'react'
-import { createAppKit, useDisconnect, useAppKit } from '@reown/appkit/react'
+import { createAppKit, useDisconnect, useAppKit, useAppKitAccount } from '@reown/appkit/react'
 import { HederaChainDefinition } from '@hashgraph/hedera-wallet-connect'
 import { metadata, networks, DEFAULT_RPC_URL } from './config'
 import { ActionButtonList } from './components/ActionButtonList'
@@ -190,6 +190,7 @@ export function App() {
 function AppContent({ appKitConfig }: { appKitConfig: any }) {
   const { disconnect: disconnectV2 } = useDisconnect()
   const { open } = useAppKit()
+  const { isConnected: isAppKitConnected, address: appKitAddress } = useAppKitAccount()
   const [transactionHash, setTransactionHash] = useState('')
   const [transactionId, setTransactionId] = useState('')
   const [signedMsg, setSignedMsg] = useState('')
@@ -353,18 +354,8 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
         view: 'Connect',
       })
 
-      // Poll for session establishment to update UI immediately
-      const pollInterval = setInterval(() => {
-        if (appKitConfig?.universalProvider?.session) {
-          console.log('V2 session detected via polling, updating state')
-          clearInterval(pollInterval)
-          // Trigger state update
-          setConnectionMode('v2')
-        }
-      }, 500)
-
-      // Stop polling after 30 seconds
-      setTimeout(() => clearInterval(pollInterval), 30000)
+      // The AppKit hooks will detect the connection and update the state automatically
+      // No need for polling since we're now monitoring isAppKitConnected
     } catch (error) {
       console.error('V2 Connection error:', error)
 
@@ -421,6 +412,8 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
       console.log('✅ V1 Connection Detected (from session marker)')
       setConnectionMode('v1')
     } else if (
+      isAppKitConnected &&
+      appKitAddress &&
       appKitConfig?.universalProvider?.session &&
       (appKitConfig.universalProvider.session.namespaces?.hedera ||
         appKitConfig.universalProvider.session.namespaces?.eip155)
@@ -471,7 +464,13 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
     } else {
       setConnectionMode('none')
     }
-  }, [v1Connection.isConnected, v1Connection.session, appKitConfig?.universalProvider?.session])
+  }, [
+    v1Connection.isConnected,
+    v1Connection.session,
+    appKitConfig?.universalProvider?.session,
+    isAppKitConnected,
+    appKitAddress,
+  ])
 
   // Add session validation effect for V2
   useEffect(() => {
