@@ -215,31 +215,14 @@ export function useDAppConnectorV1() {
           console.log('🔗 V1 Connection: Opening modal for QR code connection')
 
           try {
-            const uri = await connector.openModal()
-            if (!uri) {
-              throw new Error('Failed to get connection URI')
+            // openModal returns a session, not a URI
+            session = await connector.openModal()
+            if (!session) {
+              throw new Error('Failed to establish connection')
             }
-            console.log('🔗 V1 Connection: URI generated', {
-              uri: uri.substring(0, 50) + '...',
-            })
-
-            // Wait for connection to be established
-            await new Promise<void>((resolve) => {
-              const checkInterval = setInterval(() => {
-                const walletClient = (connector as any).walletConnectClient
-                const sessions = walletClient?.session?.getAll?.() || []
-                if (sessions.length > 0) {
-                  clearInterval(checkInterval)
-                  session = sessions[0]
-                  resolve()
-                }
-              }, 500)
-
-              // Timeout after 60 seconds
-              setTimeout(() => {
-                clearInterval(checkInterval)
-                resolve()
-              }, 60000)
+            console.log('🔗 V1 Connection: Session established', {
+              topic: session.topic,
+              peer: session.peer,
             })
           } catch (error) {
             if (
