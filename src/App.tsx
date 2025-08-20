@@ -692,7 +692,11 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
             }}
           >
             <button
-              onClick={() => setShowV1Modal(true)}
+              onClick={async () => {
+                // Initialize V1 connector to detect extensions before showing modal
+                await v1Connection.initializeConnector()
+                setShowV1Modal(true)
+              }}
               className="primary-button"
               style={{ backgroundColor: '#7B3FF2' }}
             >
