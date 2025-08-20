@@ -16,6 +16,7 @@ interface InfoListProps {
   signedMsg: string
   nodes: string[]
   lastFunctionResult: FunctionResult | null
+  connectionMode?: 'none' | 'v1' | 'v2'
 }
 
 export const InfoList = ({
@@ -24,6 +25,7 @@ export const InfoList = ({
   signedMsg,
   nodes,
   lastFunctionResult,
+  connectionMode = 'none',
 }: InfoListProps) => {
   const [statusEthTx, setStatusEthTx] = useState('')
   const { themeMode, themeVariables } = useAppKitTheme()
@@ -135,51 +137,59 @@ export const InfoList = ({
         </section>
       )}
 
-      <section>
-        <h2>useAppKit</h2>
-        <pre>
-          Address: {address}
-          <br />
-          caip Address: {caipAddress}
-          <br />
-          Connected: {isConnected.toString()}
-          <br />
-          Status: {status}
-          <br />
-        </pre>
-      </section>
+      {connectionMode === 'v2' && (
+        <section>
+          <h2>useAppKit</h2>
+          <pre>
+            Address: {address}
+            <br />
+            caip Address: {caipAddress}
+            <br />
+            Connected: {isConnected.toString()}
+            <br />
+            Status: {status}
+            <br />
+          </pre>
+        </section>
+      )}
 
-      <section>
-        <h2>Theme</h2>
-        <pre>
-          Theme: {themeMode}
-          <br />
-          ThemeVariables: {JSON.stringify(themeVariables, null, 2)}
-          <br />
-        </pre>
-      </section>
+      {connectionMode === 'v2' && (
+        <section>
+          <h2>Theme</h2>
+          <pre>
+            Theme: {themeMode}
+            <br />
+            ThemeVariables: {JSON.stringify(themeVariables, null, 2)}
+            <br />
+          </pre>
+        </section>
+      )}
 
-      <section>
-        <h2>State</h2>
-        <pre>
-          activeChain: {state.activeChain}
-          <br />
-          loading: {state.loading.toString()}
-          <br />
-          open: {state.open.toString()}
-          <br />
-          selectedNetworkId: {state.selectedNetworkId?.toString()}
-          <br />
-        </pre>
-      </section>
+      {connectionMode === 'v2' && (
+        <section>
+          <h2>State</h2>
+          <pre>
+            activeChain: {state.activeChain}
+            <br />
+            loading: {state.loading.toString()}
+            <br />
+            open: {state.open.toString()}
+            <br />
+            selectedNetworkId: {state.selectedNetworkId?.toString()}
+            <br />
+          </pre>
+        </section>
+      )}
 
-      <section>
-        <h2>WalletInfo</h2>
-        <pre>
-          Name: {walletInfo.walletInfo?.name?.toString()}
-          <br />
-        </pre>
-      </section>
+      {connectionMode === 'v2' && (
+        <section>
+          <h2>WalletInfo</h2>
+          <pre>
+            Name: {walletInfo.walletInfo?.name?.toString()}
+            <br />
+          </pre>
+        </section>
+      )}
 
       {nodes.length > 0 && (
         <section>

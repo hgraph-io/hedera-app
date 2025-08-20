@@ -814,6 +814,7 @@ function AppContent({ appKitConfig }: { appKitConfig: any }) {
           signedMsg={signedMsg}
           nodes={nodes}
           lastFunctionResult={lastFunctionResult}
+          connectionMode={connectionMode}
         />
 
         {/* V1 Connection Modal */}
