@@ -44,7 +44,7 @@ export async function createDynamicConfig(projectId: string, rpcUrl: string) {
   const providerOpts = {
     projectId,
     metadata,
-    logger: 'debug' as const,
+    logger: 'error' as const,
   }
 
   // Add chains if supported by the provider

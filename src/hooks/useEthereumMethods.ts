@@ -158,6 +158,12 @@ export const useEthereumMethods = ({
         : undefined
 
   const execute = async (methodName: string, params: Record<string, string>) => {
+    if (!rpcProvider) {
+      throw new Error(
+        `No RPC provider available for chain ${chainId}. Please ensure you are connected with the correct namespace (eip155) and chain.`,
+      )
+    }
+
     switch (methodName) {
       case 'eth_getBalance': {
         const balance = await rpcProvider.request({

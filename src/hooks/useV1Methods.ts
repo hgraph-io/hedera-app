@@ -85,9 +85,17 @@ export function useV1Methods(signers: DAppSigner[]) {
               throw new Error('Missing required parameter: message')
             }
 
-            const signature = await signer.sign(Buffer.from(params.message))
+            // Convert message to Uint8Array and wrap in array as expected by sign method
+            const messageBytes = Buffer.from(params.message)
+            const signatures = await signer.sign([messageBytes])
+
+            // Extract the signature from the first SignerSignature object
+            const signatureHex = signatures[0]?.signature
+              ? Buffer.from(signatures[0].signature).toString('hex')
+              : ''
+
             result = {
-              signature: Buffer.from(signature).toString('hex'),
+              signature: signatureHex,
               message: params.message,
             }
             break

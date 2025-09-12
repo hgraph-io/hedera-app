@@ -13,7 +13,8 @@ export const metadata = {
 export const networks = [
   HederaChainDefinition.Native.Mainnet,
   HederaChainDefinition.Native.Testnet,
-  HederaChainDefinition.EVM.Testnet, // Only testnet for EVM
+  HederaChainDefinition.EVM.Testnet,
+  HederaChainDefinition.EVM.Mainnet,
 ] as [AppKitNetwork, ...AppKitNetwork[]]
 
 // Default RPC URL
