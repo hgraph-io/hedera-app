@@ -193,10 +193,14 @@ function V2AppContent({ appKitConfig }: { appKitConfig: any }) {
           <strong>Connection Status:</strong> {isConnected ? 'Connected (V2)' : 'Not Connected'}
         </p>
         {isConnected && (
-          <p style={{ margin: '5px 0' }}>
-            <strong>Hedera Namespace V2 Account:</strong> {hederaAccount || 'N/A'}
-            <strong>EIP Namespace V2 Account:</strong> {eip155Account || 'N/A'}
-          </p>
+          <>
+            <p style={{ margin: '5px 0' }}>
+              <strong>Hedera Namespace V2 Account:</strong> {hederaAccount || 'N/A'}
+            </p>
+            <p style={{ margin: '5px 0' }}>
+              <strong>EIP Namespace V2 Account:</strong> {eip155Account || 'N/A'}
+            </p>
+          </>
         )}
       </div>
 
