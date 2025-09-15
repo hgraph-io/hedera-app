@@ -177,13 +177,6 @@ const eip155Methods: MethodConfig[] = [
       },
     ],
   },
-  {
-    name: 'eth_sendRawTransaction',
-    displayName: 'Send Raw Transaction (eth_sendRawTransaction)',
-    description: 'Send a previously signed transaction',
-    requiresWallet: false,
-    params: [],
-  },
   // Signing Methods
   {
     name: 'eth_signMessage',
@@ -382,6 +375,14 @@ const eip155Methods: MethodConfig[] = [
   },
 
   // === RPC PROVIDER METHODS (No Wallet Required) === //
+  // Transaction Methods
+  {
+    name: 'eth_sendRawTransaction',
+    displayName: 'Send Raw Transaction (eth_sendRawTransaction)',
+    description: 'Send a previously signed transaction',
+    requiresWallet: false,
+    params: [],
+  },
   // Query Methods
   {
     name: 'eth_getBalance',

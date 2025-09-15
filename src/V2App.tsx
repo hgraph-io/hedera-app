@@ -82,6 +82,10 @@ export function V2App() {
           ],
           chains: ['eip155:296', 'eip155:295'], // Testnet first, then mainnet
           events: ['chainChanged', 'accountsChanged'],
+          rpcMap: {
+            'eip155:296': rpcUrl || 'https://testnet.hashio.io/api',
+            'eip155:295': 'https://mainnet.hashio.io/api',
+          },
         },
         hedera: {
           methods: [
