@@ -664,6 +664,7 @@ export function MethodExecutor({
         params.address = address
       }
 
+      console.log('Executing method:', currentMethod.name, 'with params:', params)
       const data = await onExecute(currentMethod.name, params)
       setResult({ success: true, data })
     } catch (error) {

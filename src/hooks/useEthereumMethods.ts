@@ -136,28 +136,45 @@ export const useEthereumMethods = ({
     walletProvider && address && browserProvider
       ? new JsonRpcSigner(browserProvider, address)
       : undefined
-  const rpcProvider =
-    walletProvider && chainId
-      ? (
-          walletProvider.rpcProviders as unknown as Record<
-            string,
-            Record<
-              string,
-              Record<
-                number,
-                { request: (params: { method: string; params: unknown[] }) => Promise<unknown> }
-              >
-            >
-          >
-        )?.eip155?.httpProviders?.[chainId]
-      : jsonRpcProvider
-        ? {
-            request: ({ method, params }: { method: string; params: unknown[] }) =>
-              jsonRpcProvider.send(method, params as never[]),
-          }
-        : undefined
+  // Get the RPC provider - either from wallet provider's HTTP providers or fallback to jsonRpcProvider
+  let rpcProvider = null
+
+  if (walletProvider && chainId) {
+    // Try to get the HTTP provider from the wallet provider
+    const providers = walletProvider.rpcProviders as any
+    console.log('Available providers:', providers)
+
+    if (providers?.eip155?.httpProviders?.[chainId]) {
+      rpcProvider = providers.eip155.httpProviders[chainId]
+      console.log('Using wallet HTTP provider for chainId', chainId)
+    } else if (walletProvider.eip155Provider) {
+      // Fallback to the eip155Provider directly
+      rpcProvider = {
+        request: (args: { method: string; params: unknown[] }) =>
+          walletProvider.eip155Provider.request({
+            request: args,
+            chainId: `eip155:${chainId}`,
+            topic: walletProvider.session?.topic || '',
+          }),
+      }
+      console.log('Using eip155Provider directly')
+    }
+  }
+
+  // Fallback to jsonRpcProvider if no wallet provider
+  if (!rpcProvider && jsonRpcProvider) {
+    rpcProvider = {
+      request: ({ method, params }: { method: string; params: unknown[] }) =>
+        jsonRpcProvider.send(method, params as never[]),
+    }
+    console.log('Using jsonRpcProvider fallback')
+  }
+
+  console.log('Final rpcProvider:', rpcProvider)
 
   const execute = async (methodName: string, params: Record<string, string>) => {
+    console.log('useEthereumMethods execute called with:', methodName, params)
+
     if (!rpcProvider) {
       throw new Error(
         `No RPC provider available for chain ${chainId}. Please ensure you are connected with the correct namespace (eip155) and chain.`,
@@ -397,12 +414,27 @@ export const useEthereumMethods = ({
       }
       case 'eth_getLogs': {
         const p = params as unknown as EthGetLogsParams
+        console.log('eth_getLogs params:', p)
         const filter = {
           address: hexlify(p.address),
           fromBlock: p.fromBlock,
           toBlock: p.toBlock,
         }
-        return rpcProvider.request({ method: 'eth_getLogs', params: [filter] })
+        console.log('eth_getLogs filter:', filter)
+        console.log('rpcProvider type:', typeof rpcProvider, rpcProvider)
+
+        // Try direct RPC call
+        try {
+          const result = await rpcProvider.request({
+            method: 'eth_getLogs',
+            params: [filter],
+          })
+          console.log('eth_getLogs result:', result)
+          return result
+        } catch (error) {
+          console.error('eth_getLogs error:', error)
+          throw error
+        }
       }
       case 'eth_mining': {
         return rpcProvider.request({ method: 'eth_mining', params: [] })
