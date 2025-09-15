@@ -1,11 +1,10 @@
 import './App.css'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ConnectionWrapper } from './components/ConnectionWrapper'
 import { V1ConnectionModal } from './components/V1ConnectionModal'
 import { ConfigurationModal } from './components/ConfigurationModal'
 import { MethodExecutor } from './components/MethodExecutor'
-import { SessionMonitor } from './utils/sessionMonitor'
 import { useDAppConnectorV1 } from './hooks/useDAppConnectorV1'
 import { useV1Methods } from './hooks/useV1Methods'
 import { DEFAULT_RPC_URL } from './config'
@@ -23,7 +22,6 @@ export function V1App() {
   const [lastFunctionResult, setLastFunctionResult] = useState<FunctionResult | null>(null)
   const [showV1Modal, setShowV1Modal] = useState(false)
   const [showConfigModal, setShowConfigModal] = useState(false)
-  const sessionMonitorRef = useRef<SessionMonitor | null>(null)
 
   // V1 connection state
   const v1Connection = useDAppConnectorV1()
