@@ -27,13 +27,13 @@ interface MethodConfig {
 const hederaMethods: MethodConfig[] = [
   {
     name: HederaJsonRpcMethod.GetNodeAddresses,
-    displayName: 'Get Node Addresses',
+    displayName: 'Get Node Addresses (hedera_getNodeAddresses)',
     description: 'Retrieve the list of node addresses',
     params: [],
   },
   {
     name: HederaJsonRpcMethod.SignMessage,
-    displayName: 'Sign Message',
+    displayName: 'Sign Message (hedera_signMessage)',
     description: 'Sign a message with your account',
     params: [
       {
@@ -48,7 +48,7 @@ const hederaMethods: MethodConfig[] = [
   },
   {
     name: HederaJsonRpcMethod.SignTransaction,
-    displayName: 'Sign Transaction',
+    displayName: 'Sign Transaction (hedera_signTransaction)',
     description: 'Sign a transaction (requires separate execution)',
     params: [
       {
@@ -78,13 +78,13 @@ const hederaMethods: MethodConfig[] = [
   },
   {
     name: HederaJsonRpcMethod.ExecuteTransaction,
-    displayName: 'Execute Transaction',
+    displayName: 'Execute Transaction (hedera_executeTransaction)',
     description: 'Execute a previously signed transaction',
     params: [],
   },
   {
     name: HederaJsonRpcMethod.SignAndExecuteTransaction,
-    displayName: 'Sign & Execute Transaction',
+    displayName: 'Sign & Execute Transaction (hedera_signAndExecuteTransaction)',
     description: 'Sign and execute a transaction in one step',
     params: [
       {
@@ -106,7 +106,7 @@ const hederaMethods: MethodConfig[] = [
   },
   {
     name: HederaJsonRpcMethod.SignAndExecuteQuery,
-    displayName: 'Sign & Execute Query',
+    displayName: 'Sign & Execute Query (hedera_signAndExecuteQuery)',
     description: 'Execute a query (e.g., account info)',
     params: [],
   },
@@ -117,7 +117,7 @@ const eip155Methods: MethodConfig[] = [
   // Transaction Methods
   {
     name: 'eth_sendTransaction',
-    displayName: 'Send Transaction',
+    displayName: 'Send Transaction (eth_sendTransaction)',
     description: 'Send ETH to another address',
     requiresWallet: true,
     params: [
@@ -148,7 +148,7 @@ const eip155Methods: MethodConfig[] = [
   },
   {
     name: 'eth_signTransaction',
-    displayName: 'Sign Transaction',
+    displayName: 'Sign Transaction (eth_signTransaction)',
     description: 'Sign a transaction without sending',
     requiresWallet: true,
     params: [
@@ -179,7 +179,7 @@ const eip155Methods: MethodConfig[] = [
   },
   {
     name: 'eth_sendRawTransaction',
-    displayName: 'Send Raw Transaction',
+    displayName: 'Send Raw Transaction (eth_sendRawTransaction)',
     description: 'Send a previously signed transaction',
     requiresWallet: false,
     params: [],
@@ -203,7 +203,7 @@ const eip155Methods: MethodConfig[] = [
   },
   {
     name: 'personal_sign',
-    displayName: 'Personal Sign',
+    displayName: 'Personal Sign (personal_sign)',
     description: 'Sign a message using personal_sign',
     requiresWallet: true,
     params: [
@@ -219,7 +219,7 @@ const eip155Methods: MethodConfig[] = [
   },
   {
     name: 'eth_sign',
-    displayName: 'ETH Sign (Legacy)',
+    displayName: 'ETH Sign Legacy (eth_sign)',
     description: 'Legacy signing method (less secure)',
     requiresWallet: true,
     params: [
@@ -235,7 +235,7 @@ const eip155Methods: MethodConfig[] = [
   },
   {
     name: 'eth_signTypedData',
-    displayName: 'Sign Typed Data',
+    displayName: 'Sign Typed Data (eth_signTypedData)',
     description: 'Sign structured data (EIP-712)',
     requiresWallet: true,
     params: [
@@ -304,12 +304,88 @@ const eip155Methods: MethodConfig[] = [
       },
     ],
   },
+  {
+    name: 'eth_signTypedData_v4',
+    displayName: 'Sign Typed Data V4 (eth_signTypedData_v4)',
+    description: 'Sign structured data using EIP-712 v4',
+    requiresWallet: true,
+    params: [
+      {
+        name: 'domain',
+        label: 'Domain Name',
+        type: 'text',
+        placeholder: 'Example App',
+        required: true,
+        defaultValue: 'Example App',
+      },
+      {
+        name: 'version',
+        label: 'Version',
+        type: 'text',
+        placeholder: '1',
+        required: true,
+        defaultValue: '1',
+      },
+      {
+        name: 'verifyingContract',
+        label: 'Verifying Contract',
+        type: 'text',
+        placeholder: '0x...',
+        required: true,
+      },
+      {
+        name: 'from_name',
+        label: 'From Name',
+        type: 'text',
+        placeholder: 'Alice',
+        required: true,
+        defaultValue: 'Alice',
+      },
+      {
+        name: 'from_wallet',
+        label: 'From Wallet',
+        type: 'text',
+        placeholder: '0x...',
+        required: true,
+      },
+      {
+        name: 'to_name',
+        label: 'To Name',
+        type: 'text',
+        placeholder: 'Bob',
+        required: true,
+        defaultValue: 'Bob',
+      },
+      {
+        name: 'to_wallet',
+        label: 'To Wallet',
+        type: 'text',
+        placeholder: '0x...',
+        required: true,
+      },
+      {
+        name: 'contents',
+        label: 'Message',
+        type: 'textarea',
+        placeholder: 'Message content',
+        required: true,
+        defaultValue: 'Hello, this is a typed message!',
+      },
+    ],
+  },
+  {
+    name: 'eth_accounts',
+    displayName: 'Get Accounts (eth_accounts)',
+    description: 'Get list of accounts controlled by the wallet',
+    requiresWallet: true,
+    params: [],
+  },
 
   // === RPC PROVIDER METHODS (No Wallet Required) === //
   // Query Methods
   {
     name: 'eth_getBalance',
-    displayName: 'Get Balance',
+    displayName: 'Get Balance (eth_getBalance)',
     description: 'Get ETH balance of an address',
     requiresWallet: false,
     params: [
@@ -324,35 +400,35 @@ const eip155Methods: MethodConfig[] = [
   },
   {
     name: 'eth_chainId',
-    displayName: 'Get Chain ID',
+    displayName: 'Get Chain ID (eth_chainId)',
     description: 'Get the current chain ID',
     requiresWallet: false,
     params: [],
   },
   {
     name: 'eth_blockNumber',
-    displayName: 'Get Block Number',
+    displayName: 'Get Block Number (eth_blockNumber)',
     description: 'Get the latest block number',
     requiresWallet: false,
     params: [],
   },
   {
     name: 'eth_gasPrice',
-    displayName: 'Get Gas Price',
+    displayName: 'Get Gas Price (eth_gasPrice)',
     description: 'Get current gas price',
     requiresWallet: false,
     params: [],
   },
   {
     name: 'eth_getTransactionCount',
-    displayName: 'Get Transaction Count',
+    displayName: 'Get Transaction Count (eth_getTransactionCount)',
     description: 'Get nonce for an address',
     requiresWallet: false,
     params: [],
   },
   {
     name: 'eth_getTransactionByHash',
-    displayName: 'Get Transaction by Hash',
+    displayName: 'Get Transaction by Hash (eth_getTransactionByHash)',
     description: 'Get transaction details by hash',
     requiresWallet: false,
     params: [
@@ -367,8 +443,9 @@ const eip155Methods: MethodConfig[] = [
   },
   {
     name: 'eth_getTransactionReceipt',
-    displayName: 'Get Transaction Receipt',
+    displayName: 'Get Transaction Receipt (eth_getTransactionReceipt)',
     description: 'Get transaction receipt by hash',
+    requiresWallet: false,
     params: [
       {
         name: 'hash',
@@ -382,8 +459,9 @@ const eip155Methods: MethodConfig[] = [
   // Block Methods
   {
     name: 'eth_getBlockByNumber',
-    displayName: 'Get Block by Number',
+    displayName: 'Get Block by Number (eth_getBlockByNumber)',
     description: 'Get block information by number',
+    requiresWallet: false,
     params: [
       {
         name: 'blockTag',
@@ -408,8 +486,9 @@ const eip155Methods: MethodConfig[] = [
   // Contract Methods
   {
     name: 'eth_call',
-    displayName: 'Call Contract',
+    displayName: 'Call Contract (eth_call)',
     description: 'Call a contract method',
+    requiresWallet: false,
     params: [
       {
         name: 'to',
@@ -429,8 +508,9 @@ const eip155Methods: MethodConfig[] = [
   },
   {
     name: 'eth_getCode',
-    displayName: 'Get Contract Code',
+    displayName: 'Get Contract Code (eth_getCode)',
     description: 'Get bytecode at address',
+    requiresWallet: false,
     params: [
       {
         name: 'address',
@@ -451,8 +531,9 @@ const eip155Methods: MethodConfig[] = [
   // Storage Methods
   {
     name: 'eth_getStorageAt',
-    displayName: 'Get Storage At',
+    displayName: 'Get Storage At (eth_getStorageAt)',
     description: 'Get storage value at position',
+    requiresWallet: false,
     params: [
       {
         name: 'address',
@@ -481,8 +562,9 @@ const eip155Methods: MethodConfig[] = [
   // Logs and Events
   {
     name: 'eth_getLogs',
-    displayName: 'Get Logs',
+    displayName: 'Get Logs (eth_getLogs)',
     description: 'Get event logs',
+    requiresWallet: false,
     params: [
       {
         name: 'address',
@@ -510,14 +592,16 @@ const eip155Methods: MethodConfig[] = [
   // Network Methods
   {
     name: 'net_version',
-    displayName: 'Network Version',
+    displayName: 'Network Version (net_version)',
     description: 'Get network version',
+    requiresWallet: false,
     params: [],
   },
   {
     name: 'web3_clientVersion',
-    displayName: 'Client Version',
+    displayName: 'Client Version (web3_clientVersion)',
     description: 'Get client version string',
+    requiresWallet: false,
     params: [],
   },
 ]
