@@ -24,6 +24,7 @@ import { ConfigurationModal } from './components/ConfigurationModal'
 import { InitialConfigForm } from './components/InitialConfigForm'
 import { useHederaMethods } from './hooks/useHederaMethods'
 import { useEthereumMethods } from './hooks/useEthereumMethods'
+import { MethodExecutor } from './components/MethodExecutor'
 
 export interface FunctionResult {
   functionName: string
@@ -154,6 +155,10 @@ function V2AppContent({ appKitConfig }: { appKitConfig: any }) {
   const events = useAppKitEvents()
   console.log(events)
   const [showConfigModal, setShowConfigModal] = useState(false)
+  const [transactionHash, setTransactionHash] = useState('')
+  const [transactionId, setTransactionId] = useState('')
+  const [signedMsg, setSignedMsg] = useState('')
+  const [nodes, setNodes] = useState<string[]>([])
 
   console.log('xxxxxxxxxxxxxx')
   console.log(address, isConnected, caipAddress, status)
@@ -168,6 +173,34 @@ function V2AppContent({ appKitConfig }: { appKitConfig: any }) {
     appKitConfig?.universalProvider?.session?.namespaces?.eip155?.accounts?.[0]
       ?.split(':')
       .pop()
+
+  // Get chain ID for EIP155
+  const eip155ChainId =
+    appKitConfig?.universalProvider?.session?.namespaces?.eip155?.chains?.[0]?.split(':')[1]
+      ? parseInt(
+          appKitConfig.universalProvider.session.namespaces.eip155.chains[0].split(':')[1],
+        )
+      : undefined
+
+  // Setup Hedera methods
+  const { executeHederaMethod } = useHederaMethods(
+    appKitConfig?.universalProvider,
+    hederaAccount || '',
+    setTransactionId,
+    setSignedMsg,
+    setNodes,
+  )
+
+  // Setup Ethereum methods
+  const { executeEthMethod } = useEthereumMethods({
+    walletProvider: appKitConfig?.universalProvider,
+    chainId: eip155ChainId,
+    address: eip155Account,
+    ethTxHash: transactionHash,
+    sendHash: setTransactionHash,
+    sendSignMsg: setSignedMsg,
+    jsonRpcProvider: appKitConfig?.jsonRpcProvider,
+  })
 
   return (
     <div className="pages">
@@ -246,98 +279,90 @@ function V2AppContent({ appKitConfig }: { appKitConfig: any }) {
         </div>
       )}
 
-      {/* Action Buttons */}
-      {/*
-      {isConnected &&
-        v2Namespace &&
-        (() => {
-          const hederaMethods =
-            v2Namespace === 'hedera' || v2Namespace === 'both'
-              ? [
-                  {
-                    name: 'Get Node Addresses',
-                    action: async () => {
-                      try {
-                        const result = await executeHederaMethod('hedera_getNodeAddresses', {})
-                        setLastFunctionResult({
-                          functionName: 'Get Node Addresses',
-                          result: `Nodes: ${Array.isArray(result) ? result.join(', ') : result}`,
-                        })
-                      } catch (error) {
-                        setLastFunctionResult({
-                          functionName: 'Get Node Addresses',
-                          result: `Error: ${error instanceof Error ? error.message : 'Failed'}`,
-                        })
-                      }
-                    },
-                  },
-                  {
-                    name: 'Sign Message',
-                    action: async () => {
-                      try {
-                        const result = await executeHederaMethod('hedera_signMessage', {
-                          message: 'Hello from Hedera V2 - ' + new Date().toISOString(),
-                        })
-                        setLastFunctionResult({
-                          functionName: 'Sign Message',
-                          result: 'Message signed successfully',
-                        })
-                      } catch (error) {
-                        setLastFunctionResult({
-                          functionName: 'Sign Message',
-                          result: `Error: ${error instanceof Error ? error.message : 'Failed'}`,
-                        })
-                      }
-                    },
-                  },
-                  {
-                    name: 'Sign & Execute Transaction',
-                    action: async () => {
-                      try {
-                        const result = await executeHederaMethod(
-                          'hedera_signAndExecuteTransaction',
-                          {
-                            recipientId: '0.0.123456',
-                            amount: '1',
-                          },
-                        )
-                        setLastFunctionResult({
-                          functionName: 'Sign & Execute Transaction',
-                          result: `Transaction ID: ${result}`,
-                        })
-                      } catch (error) {
-                        setLastFunctionResult({
-                          functionName: 'Sign & Execute Transaction',
-                          result: `Error: ${error instanceof Error ? error.message : 'Failed'}`,
-                        })
-                      }
-                    },
-                  },
-                ]
-              : []
+      {/* Method Executors */}
+      {isConnected && (
+        <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
+          {/* Hedera Methods */}
+          {hederaAccount && (
+            <div style={{ flex: 1 }}>
+              <MethodExecutor
+                namespace="hedera"
+                isConnected={isConnected}
+                onExecute={executeHederaMethod}
+                address={hederaAccount}
+              />
+            </div>
+          )}
 
-          const ethMethods =
-            v2Namespace === 'eip155' || v2Namespace === 'both'
-              ? [
-                  {
-                    name: 'Execute ETH Method',
-                    action: () =>
-                      executeEthMethod('eth_getBalance', { address: eip155Account }),
-                  },
-                ]
-              : []
+          {/* EIP155 Methods */}
+          {eip155Account && (
+            <div style={{ flex: 1 }}>
+              <MethodExecutor
+                namespace="eip155"
+                isConnected={isConnected}
+                onExecute={executeEthMethod}
+                address={eip155Account}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
-          return (
-            <ActionButtonList
-              title={`V2 Connection Methods (${v2Namespace})`}
-              methods={hederaMethods}
-              ethMethods={ethMethods}
-              onClearState={clearState}
-              jsonRpcProvider={appKitConfig?.jsonRpcProvider}
-            />
-          )
-        })()}
-			*/}
+      {/* Results Display */}
+      {isConnected && (transactionHash || transactionId || signedMsg || nodes.length > 0) && (
+        <div
+          style={{
+            padding: '20px',
+            backgroundColor: '#f0f8ff',
+            borderRadius: '8px',
+            marginBottom: '20px',
+          }}
+        >
+          <h3>Recent Results</h3>
+          {transactionHash && (
+            <div style={{ marginBottom: '10px' }}>
+              <strong>ETH Transaction Hash:</strong>
+              <pre style={{ fontSize: '12px', wordBreak: 'break-all' }}>{transactionHash}</pre>
+            </div>
+          )}
+          {transactionId && (
+            <div style={{ marginBottom: '10px' }}>
+              <strong>Hedera Transaction ID:</strong>
+              <pre style={{ fontSize: '12px', wordBreak: 'break-all' }}>{transactionId}</pre>
+            </div>
+          )}
+          {signedMsg && (
+            <div style={{ marginBottom: '10px' }}>
+              <strong>Signed Message:</strong>
+              <pre style={{ fontSize: '12px', wordBreak: 'break-all' }}>{signedMsg}</pre>
+            </div>
+          )}
+          {nodes.length > 0 && (
+            <div style={{ marginBottom: '10px' }}>
+              <strong>Node Addresses:</strong>
+              <pre style={{ fontSize: '12px', wordBreak: 'break-all' }}>{nodes.join(', ')}</pre>
+            </div>
+          )}
+          <button
+            onClick={() => {
+              setTransactionHash('')
+              setTransactionId('')
+              setSignedMsg('')
+              setNodes([])
+            }}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#dc3545',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+            }}
+          >
+            Clear Results
+          </button>
+        </div>
+      )}
 
       <div className="advice">
         <div style={{ fontSize: '12px', color: '#666' }}>
