@@ -12,6 +12,7 @@ interface MethodConfig {
   name: string
   displayName: string
   description: string
+  requiresWallet?: boolean // true for wallet signature, false/undefined for RPC
   params: {
     name: string
     label: string
@@ -112,11 +113,13 @@ const hederaMethods: MethodConfig[] = [
 ]
 
 const eip155Methods: MethodConfig[] = [
+  // === WALLET SIGNATURE METHODS === //
   // Transaction Methods
   {
     name: 'eth_sendTransaction',
     displayName: 'Send Transaction',
     description: 'Send ETH to another address',
+    requiresWallet: true,
     params: [
       {
         name: 'to',
@@ -147,6 +150,7 @@ const eip155Methods: MethodConfig[] = [
     name: 'eth_signTransaction',
     displayName: 'Sign Transaction',
     description: 'Sign a transaction without sending',
+    requiresWallet: true,
     params: [
       {
         name: 'to',
@@ -177,6 +181,7 @@ const eip155Methods: MethodConfig[] = [
     name: 'eth_sendRawTransaction',
     displayName: 'Send Raw Transaction',
     description: 'Send a previously signed transaction',
+    requiresWallet: false,
     params: [],
   },
   // Signing Methods
@@ -184,6 +189,7 @@ const eip155Methods: MethodConfig[] = [
     name: 'eth_signMessage',
     displayName: 'Sign Message (eth_signMessage)',
     description: 'Sign a message with your account',
+    requiresWallet: true,
     params: [
       {
         name: 'message',
@@ -199,6 +205,7 @@ const eip155Methods: MethodConfig[] = [
     name: 'personal_sign',
     displayName: 'Personal Sign',
     description: 'Sign a message using personal_sign',
+    requiresWallet: true,
     params: [
       {
         name: 'message',
@@ -214,6 +221,7 @@ const eip155Methods: MethodConfig[] = [
     name: 'eth_sign',
     displayName: 'ETH Sign (Legacy)',
     description: 'Legacy signing method (less secure)',
+    requiresWallet: true,
     params: [
       {
         name: 'message',
@@ -229,6 +237,7 @@ const eip155Methods: MethodConfig[] = [
     name: 'eth_signTypedData',
     displayName: 'Sign Typed Data',
     description: 'Sign structured data (EIP-712)',
+    requiresWallet: true,
     params: [
       {
         name: 'domain',
@@ -295,11 +304,14 @@ const eip155Methods: MethodConfig[] = [
       },
     ],
   },
+
+  // === RPC PROVIDER METHODS (No Wallet Required) === //
   // Query Methods
   {
     name: 'eth_getBalance',
     displayName: 'Get Balance',
     description: 'Get ETH balance of an address',
+    requiresWallet: false,
     params: [
       {
         name: 'address',
@@ -314,30 +326,35 @@ const eip155Methods: MethodConfig[] = [
     name: 'eth_chainId',
     displayName: 'Get Chain ID',
     description: 'Get the current chain ID',
+    requiresWallet: false,
     params: [],
   },
   {
     name: 'eth_blockNumber',
     displayName: 'Get Block Number',
     description: 'Get the latest block number',
+    requiresWallet: false,
     params: [],
   },
   {
     name: 'eth_gasPrice',
     displayName: 'Get Gas Price',
     description: 'Get current gas price',
+    requiresWallet: false,
     params: [],
   },
   {
     name: 'eth_getTransactionCount',
     displayName: 'Get Transaction Count',
     description: 'Get nonce for an address',
+    requiresWallet: false,
     params: [],
   },
   {
     name: 'eth_getTransactionByHash',
     displayName: 'Get Transaction by Hash',
     description: 'Get transaction details by hash',
+    requiresWallet: false,
     params: [
       {
         name: 'hash',
@@ -593,6 +610,28 @@ export function MethodExecutor({
     <div style={{ padding: '20px', backgroundColor: '#f9f9f9', borderRadius: '8px' }}>
       <h3>{namespace === 'hedera' ? 'Hedera' : 'EIP-155'} Methods</h3>
 
+      {/* Legend for EIP-155 methods */}
+      {namespace === 'eip155' && (
+        <div
+          style={{
+            marginBottom: '15px',
+            padding: '10px',
+            backgroundColor: '#f0f0f0',
+            borderRadius: '6px',
+            fontSize: '13px',
+            display: 'flex',
+            gap: '20px',
+          }}
+        >
+          <span>
+            🔐 <strong>Wallet</strong> - Requires wallet signature
+          </span>
+          <span>
+            🌐 <strong>RPC</strong> - Direct blockchain query
+          </span>
+        </div>
+      )}
+
       {/* Method Selector */}
       <div style={{ marginBottom: '20px' }}>
         <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
@@ -612,7 +651,9 @@ export function MethodExecutor({
           <option value="">-- Select a method --</option>
           {methods.map((method) => (
             <option key={method.name} value={method.name}>
-              {method.displayName}
+              {namespace === 'eip155' && method.requiresWallet !== undefined
+                ? `${method.requiresWallet ? '🔐 ' : '🌐 '}${method.displayName}`
+                : method.displayName}
             </option>
           ))}
         </select>
@@ -628,7 +669,25 @@ export function MethodExecutor({
             border: '1px solid #e0e0e0',
           }}
         >
-          <h4 style={{ margin: '0 0 8px 0' }}>{currentMethod.displayName}</h4>
+          <h4
+            style={{ margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            {currentMethod.displayName}
+            {namespace === 'eip155' && currentMethod.requiresWallet !== undefined && (
+              <span
+                style={{
+                  fontSize: '12px',
+                  padding: '2px 8px',
+                  borderRadius: '12px',
+                  backgroundColor: currentMethod.requiresWallet ? '#ffeaa7' : '#74b9ff',
+                  color: currentMethod.requiresWallet ? '#d63031' : '#0984e3',
+                  fontWeight: 'normal',
+                }}
+              >
+                {currentMethod.requiresWallet ? '🔐 Wallet' : '🌐 RPC'}
+              </span>
+            )}
+          </h4>
           <p
             style={{
               margin: '0 0 15px 0',
@@ -637,6 +696,20 @@ export function MethodExecutor({
             }}
           >
             {currentMethod.description}
+            {namespace === 'eip155' && currentMethod.requiresWallet !== undefined && (
+              <span
+                style={{
+                  display: 'block',
+                  marginTop: '4px',
+                  fontSize: '12px',
+                  fontStyle: 'italic',
+                }}
+              >
+                {currentMethod.requiresWallet
+                  ? 'This method requires wallet signature'
+                  : 'This method queries data directly from the blockchain'}
+              </span>
+            )}
           </p>
 
           {/* Form Fields */}

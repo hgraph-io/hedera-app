@@ -80,7 +80,7 @@ export function V2App() {
             'eth_accounts',
             'eth_chainId',
           ],
-          chains: ['eip155:295', 'eip155:296'], // Hashpack only uses the first chain in the list
+          chains: ['eip155:296', 'eip155:295'], // Testnet first, then mainnet
           events: ['chainChanged', 'accountsChanged'],
         },
         hedera: {
@@ -92,8 +92,7 @@ export function V2App() {
             'hedera_signAndExecuteTransaction',
             'hedera_signTransaction',
           ],
-          chains: ['hedera:mainnet'], // Hashpack only uses the first chain in the list, also this seems to dictate testnet vs mainnet for EIP155
-          // chains: ['hedera:testnet', 'hedera:mainnet'], // Hashpack only uses the first chain in the list
+          chains: ['hedera:testnet', 'hedera:mainnet'], // Hashpack only uses the first chain in the list, also this seems to dictate testnet vs mainnet for EIP155
           events: ['chainChanged', 'accountsChanged'],
         },
       },
