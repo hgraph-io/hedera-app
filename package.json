@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@hashgraph/hedera-wallet-connect": "file:../../hedera-wallet-connect",
-    "@hashgraph/sdk": "^2.61.0",
+    "@hashgraph/sdk": "^2.72.0",
     "@reown/appkit": "^1.7.16",
     "@reown/appkit-adapter-ethers": "^1.7.16",
     "@reown/appkit-core": "^1.7.16",
