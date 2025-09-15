@@ -1,11 +1,10 @@
 import './App.css'
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { ActionButtonList } from './components/ActionButtonList'
-import { InfoList } from './components/InfoList'
 import { ConnectionWrapper } from './components/ConnectionWrapper'
 import { V1ConnectionModal } from './components/V1ConnectionModal'
 import { ConfigurationModal } from './components/ConfigurationModal'
+import { MethodExecutor } from './components/MethodExecutor'
 import { SessionMonitor } from './utils/sessionMonitor'
 import { useDAppConnectorV1 } from './hooks/useDAppConnectorV1'
 import { useV1Methods } from './hooks/useV1Methods'
@@ -28,7 +27,7 @@ export function V1App() {
 
   // V1 connection state
   const v1Connection = useDAppConnectorV1()
-  const v1Methods = useV1Methods(v1Connection.signers)
+  const v1Methods = useV1Methods(v1Connection.signers, setTransactionId, setSignedMsg, setNodes)
 
   // Get configuration from localStorage
   const projectId = localStorage.getItem('reownProjectId')
@@ -54,66 +53,8 @@ export function V1App() {
     checkV1Session()
   }, []) // Only on mount
 
-  // V1 method handlers
-  const handleV1Transfer = async () => {
-    try {
-      const result = await v1Methods.executeMethod('transferHbar', {
-        to: '0.0.123456',
-        amount: 1,
-      })
-      if (result) {
-        setTransactionId(result.transactionId)
-        setLastFunctionResult({
-          functionName: 'V1 Transfer HBAR',
-          result: `Status: ${result.status}`,
-        })
-      }
-    } catch (error) {
-      console.error('V1 Transfer failed:', error)
-      setLastFunctionResult({
-        functionName: 'V1 Transfer HBAR',
-        result: `Error: ${error instanceof Error ? error.message : 'Failed'}`,
-      })
-    }
-  }
-
-  const handleV1SignMessage = async () => {
-    try {
-      const message = 'Hello from V1 - ' + new Date().toISOString()
-      const result = await v1Methods.executeMethod('signMessage', { message })
-      if (result) {
-        setSignedMsg(result.signature)
-        setLastFunctionResult({
-          functionName: 'V1 Sign Message',
-          result: 'Message signed successfully',
-        })
-      }
-    } catch (error) {
-      console.error('V1 Sign failed:', error)
-      setLastFunctionResult({
-        functionName: 'V1 Sign Message',
-        result: `Error: ${error instanceof Error ? error.message : 'Failed'}`,
-      })
-    }
-  }
-
-  const handleV1Balance = async () => {
-    try {
-      const result = await v1Methods.executeMethod('getAccountBalance')
-      if (result) {
-        setLastFunctionResult({
-          functionName: 'V1 Account Balance',
-          result: `${result.balance}`,
-        })
-      }
-    } catch (error) {
-      console.error('V1 Balance query failed:', error)
-      setLastFunctionResult({
-        functionName: 'V1 Account Balance',
-        result: `Error: ${error instanceof Error ? error.message : 'Failed'}`,
-      })
-    }
-  }
+  // Setup V1 method executor
+  const { executeV1Method } = v1Methods
 
   // Enhanced disconnect handler
   const handleDisconnect = async () => {
@@ -157,39 +98,112 @@ export function V1App() {
 
         {/* Navigation */}
         <div style={{ marginBottom: '20px' }}>
-          <Link
-            to="/"
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#666',
-              color: 'white',
-              textDecoration: 'none',
-              borderRadius: '4px',
-              display: 'inline-block',
-            }}
-          >
-            Switch to V2 Connection
-          </Link>
+          <Link to="/">Switch to V2 Connection</Link>
         </div>
 
         {/* Connection Status */}
         <div
           style={{
             marginBottom: '20px',
-            padding: '10px',
+            padding: '15px',
             backgroundColor: '#f0f0f0',
             borderRadius: '8px',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
           }}
         >
-          <p style={{ margin: '5px 0' }}>
-            <strong>Connection Status:</strong>{' '}
-            {v1Connection.isConnected ? 'Connected (V1)' : 'Not Connected'}
-          </p>
-          {v1Connection.isConnected && (
-            <p style={{ margin: '5px 0' }}>
-              <strong>V1 Account:</strong> {v1Connection.accountId || 'N/A'}
-            </p>
-          )}
+          <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: '#333' }}>
+            Connection Information
+          </h3>
+          <div style={{ display: 'grid', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div
+                style={{
+                  width: '10px',
+                  height: '10px',
+                  borderRadius: '50%',
+                  backgroundColor: v1Connection.isConnected ? '#00c851' : '#ff4444',
+                }}
+              />
+              <span style={{ fontSize: '14px' }}>
+                <strong>Status:</strong>{' '}
+                {v1Connection.isConnected ? 'Connected' : 'Not Connected'}
+              </span>
+            </div>
+            {v1Connection.isConnected && (
+              <>
+                <div style={{ fontSize: '14px' }}>
+                  <strong>Protocol:</strong> HWC v1 (Legacy)
+                </div>
+                <div style={{ fontSize: '14px' }}>
+                  <strong>Account ID:</strong>{' '}
+                  <code
+                    style={{
+                      backgroundColor: '#e0e0e0',
+                      padding: '2px 6px',
+                      borderRadius: '3px',
+                      fontFamily: 'monospace',
+                    }}
+                  >
+                    {v1Connection.accountId || 'N/A'}
+                  </code>
+                </div>
+                <div style={{ fontSize: '14px' }}>
+                  <strong>Network:</strong>{' '}
+                  {v1Connection.session?.namespaces?.hedera?.chains?.[0] === 'hedera:mainnet' ||
+                  v1Connection.session?.namespaces?.eip155?.chains?.[0] === 'eip155:295'
+                    ? 'Mainnet'
+                    : 'Testnet'}
+                </div>
+                <div style={{ fontSize: '14px' }}>
+                  <strong>Active Namespaces:</strong>{' '}
+                  {[
+                    v1Connection.session?.namespaces?.hedera && 'Hedera',
+                    v1Connection.session?.namespaces?.eip155 && 'EIP155',
+                  ]
+                    .filter(Boolean)
+                    .join(', ') || 'Hedera'}
+                </div>
+                <div style={{ fontSize: '14px' }}>
+                  <strong>CAIP Address:</strong>{' '}
+                  <code
+                    style={{
+                      backgroundColor: '#e0e0e0',
+                      padding: '2px 6px',
+                      borderRadius: '3px',
+                      fontFamily: 'monospace',
+                      fontSize: '11px',
+                    }}
+                  >
+                    {v1Connection.session?.namespaces?.hedera?.accounts?.[0] ||
+                      v1Connection.session?.namespaces?.eip155?.accounts?.[0] ||
+                      (v1Connection.accountId
+                        ? `hedera:${
+                            v1Connection.session?.namespaces?.hedera?.chains?.[0]?.split(
+                              ':',
+                            )[1] || 'testnet'
+                          }:${v1Connection.accountId}`
+                        : 'N/A')}
+                  </code>
+                </div>
+                <div style={{ fontSize: '14px' }}>
+                  <strong>Session Topic:</strong>{' '}
+                  <code
+                    style={{
+                      backgroundColor: '#e0e0e0',
+                      padding: '2px 6px',
+                      borderRadius: '3px',
+                      fontFamily: 'monospace',
+                      fontSize: '11px',
+                    }}
+                  >
+                    {v1Connection.session?.topic
+                      ? `${v1Connection.session.topic.substring(0, 8)}...${v1Connection.session.topic.substring(v1Connection.session.topic.length - 6)}`
+                      : 'N/A'}
+                  </code>
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Connection Buttons */}
@@ -226,18 +240,16 @@ export function V1App() {
           </div>
         )}
 
-        {/* Action Buttons */}
+        {/* Method Executor */}
         {v1Connection.isConnected && (
-          <ActionButtonList
-            title="V1 Connection Methods"
-            methods={[
-              { name: 'Get Balance', action: handleV1Balance },
-              { name: 'Transfer HBAR', action: handleV1Transfer },
-              { name: 'Sign Message', action: handleV1SignMessage },
-            ]}
-            onClearState={clearState}
-            jsonRpcProvider={null}
-          />
+          <div style={{ marginBottom: '20px' }}>
+            <MethodExecutor
+              namespace="hedera"
+              isConnected={v1Connection.isConnected}
+              onExecute={executeV1Method}
+              address={v1Connection.accountId || ''}
+            />
+          </div>
         )}
 
         <div className="advice">
@@ -263,14 +275,69 @@ export function V1App() {
           </div>
         </div>
 
-        <InfoList
-          hash={transactionHash}
-          txId={transactionId}
-          signedMsg={signedMsg}
-          nodes={nodes}
-          lastFunctionResult={lastFunctionResult}
-          connectionMode="v1"
-        />
+        {/* Results Display */}
+        {v1Connection.isConnected &&
+          (transactionHash || transactionId || signedMsg || nodes.length > 0) && (
+            <div
+              style={{
+                padding: '20px',
+                backgroundColor: '#f0f8ff',
+                borderRadius: '8px',
+                marginBottom: '20px',
+              }}
+            >
+              <h3>Recent Results</h3>
+              {transactionHash && (
+                <div style={{ marginBottom: '10px' }}>
+                  <strong>ETH Transaction Hash:</strong>
+                  <pre style={{ fontSize: '12px', wordBreak: 'break-all' }}>
+                    {transactionHash}
+                  </pre>
+                </div>
+              )}
+              {transactionId && (
+                <div style={{ marginBottom: '10px' }}>
+                  <strong>Hedera Transaction ID:</strong>
+                  <pre style={{ fontSize: '12px', wordBreak: 'break-all' }}>
+                    {transactionId}
+                  </pre>
+                </div>
+              )}
+              {signedMsg && (
+                <div style={{ marginBottom: '10px' }}>
+                  <strong>Signed Message:</strong>
+                  <pre style={{ fontSize: '12px', wordBreak: 'break-all' }}>{signedMsg}</pre>
+                </div>
+              )}
+              {nodes.length > 0 && (
+                <div style={{ marginBottom: '10px' }}>
+                  <strong>Node Addresses:</strong>
+                  <pre style={{ fontSize: '12px', wordBreak: 'break-all' }}>
+                    {nodes.join(', ')}
+                  </pre>
+                </div>
+              )}
+              <button
+                onClick={() => {
+                  setTransactionHash('')
+                  setTransactionId('')
+                  setSignedMsg('')
+                  setNodes([])
+                  setLastFunctionResult(null)
+                }}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#dc3545',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                }}
+              >
+                Clear Results
+              </button>
+            </div>
+          )}
 
         {/* V1 Connection Modal */}
         <V1ConnectionModal

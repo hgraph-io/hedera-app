@@ -14,6 +14,7 @@ import {
   SignMessageParams,
   transactionToBase64String,
 } from '@hashgraph/hedera-wallet-connect'
+import { decodeSignature, formatSignatureDisplay } from '../utils/signatureVerification'
 
 export interface HederaSignTransactionParams {
   recipientId: string
@@ -60,8 +61,27 @@ export const useHederaMethods = (
           message: p.message,
         }
         const { signatureMap } = await walletProvider.hedera_signMessage(signParams)
-        sendSignMsg(signatureMap)
-        return signatureMap
+
+        // Decode and format the signature for display
+        const { display, details } = formatSignatureDisplay(signatureMap, p.message)
+
+        console.log('V2 Signature Details:', {
+          message: p.message,
+          signatureMap,
+          decoded: decodeSignature(signatureMap),
+          display,
+          details,
+        })
+
+        // Send formatted display with details
+        const formattedOutput = [display, ...details].join('\n')
+        sendSignMsg(formattedOutput)
+
+        return {
+          signatureMap,
+          formatted: display,
+          details,
+        }
       }
       case 'hedera_signTransaction': {
         const p = params as unknown as HederaSignTransactionParams

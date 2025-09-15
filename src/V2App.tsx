@@ -220,24 +220,96 @@ function V2AppContent({ appKitConfig }: { appKitConfig: any }) {
       <div
         style={{
           marginBottom: '20px',
-          padding: '10px',
+          padding: '15px',
           backgroundColor: '#f0f0f0',
           borderRadius: '8px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
         }}
       >
-        <p style={{ margin: '5px 0' }}>
-          <strong>Connection Status:</strong> {isConnected ? 'Connected (V2)' : 'Not Connected'}
-        </p>
-        {isConnected && (
-          <>
-            <p style={{ margin: '5px 0' }}>
-              <strong>Hedera Namespace V2 Account:</strong> {hederaAccount || 'N/A'}
-            </p>
-            <p style={{ margin: '5px 0' }}>
-              <strong>EIP Namespace V2 Account:</strong> {eip155Account || 'N/A'}
-            </p>
-          </>
-        )}
+        <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: '#333' }}>
+          Connection Information
+        </h3>
+        <div style={{ display: 'grid', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div
+              style={{
+                width: '10px',
+                height: '10px',
+                borderRadius: '50%',
+                backgroundColor: isConnected ? '#00c851' : '#ff4444',
+              }}
+            />
+            <span style={{ fontSize: '14px' }}>
+              <strong>Status:</strong> {isConnected ? 'Connected' : 'Not Connected'}
+            </span>
+          </div>
+          {isConnected && (
+            <>
+              <div style={{ fontSize: '14px' }}>
+                <strong>Protocol:</strong> HWC v2 (AppKit)
+              </div>
+              {hederaAccount && (
+                <div style={{ fontSize: '14px' }}>
+                  <strong>Hedera Account:</strong>{' '}
+                  <code
+                    style={{
+                      backgroundColor: '#e0e0e0',
+                      padding: '2px 6px',
+                      borderRadius: '3px',
+                      fontFamily: 'monospace',
+                    }}
+                  >
+                    {hederaAccount}
+                  </code>
+                </div>
+              )}
+              {eip155Account && (
+                <div style={{ fontSize: '14px' }}>
+                  <strong>EIP155 Account:</strong>{' '}
+                  <code
+                    style={{
+                      backgroundColor: '#e0e0e0',
+                      padding: '2px 6px',
+                      borderRadius: '3px',
+                      fontFamily: 'monospace',
+                    }}
+                  >
+                    {eip155Account}
+                  </code>
+                </div>
+              )}
+              <div style={{ fontSize: '14px' }}>
+                <strong>Network:</strong>{' '}
+                {appKitConfig?.universalProvider?.session?.namespaces?.hedera?.chains?.[0] ===
+                  'hedera:mainnet' ||
+                appKitConfig?.universalProvider?.session?.namespaces?.eip155?.chains?.[0] ===
+                  'eip155:295'
+                  ? 'Mainnet'
+                  : 'Testnet'}
+              </div>
+              <div style={{ fontSize: '14px' }}>
+                <strong>Active Namespaces:</strong>{' '}
+                {[hederaAccount && 'Hedera', eip155Account && 'EIP155']
+                  .filter(Boolean)
+                  .join(', ')}
+              </div>
+              <div style={{ fontSize: '14px' }}>
+                <strong>CAIP Address:</strong>{' '}
+                <code
+                  style={{
+                    backgroundColor: '#e0e0e0',
+                    padding: '2px 6px',
+                    borderRadius: '3px',
+                    fontFamily: 'monospace',
+                    fontSize: '11px',
+                  }}
+                >
+                  {caipAddress || 'N/A'}
+                </code>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Connection Buttons */}
