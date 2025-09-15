@@ -142,11 +142,9 @@ export const useEthereumMethods = ({
   if (walletProvider && chainId) {
     // Try to get the HTTP provider from the wallet provider
     const providers = walletProvider.rpcProviders as any
-    console.log('Available providers:', providers)
 
     if (providers?.eip155?.httpProviders?.[chainId]) {
       rpcProvider = providers.eip155.httpProviders[chainId]
-      console.log('Using wallet HTTP provider for chainId', chainId)
     } else if (walletProvider.eip155Provider) {
       // Fallback to the eip155Provider directly
       rpcProvider = {
@@ -157,7 +155,6 @@ export const useEthereumMethods = ({
             topic: walletProvider.session?.topic || '',
           }),
       }
-      console.log('Using eip155Provider directly')
     }
   }
 
@@ -167,14 +164,9 @@ export const useEthereumMethods = ({
       request: ({ method, params }: { method: string; params: unknown[] }) =>
         jsonRpcProvider.send(method, params as never[]),
     }
-    console.log('Using jsonRpcProvider fallback')
   }
 
-  console.log('Final rpcProvider:', rpcProvider)
-
   const execute = async (methodName: string, params: Record<string, string>) => {
-    console.log('useEthereumMethods execute called with:', methodName, params)
-
     if (!rpcProvider) {
       throw new Error(
         `No RPC provider available for chain ${chainId}. Please ensure you are connected with the correct namespace (eip155) and chain.`,
@@ -247,13 +239,6 @@ export const useEthereumMethods = ({
         setSignedEthTx(undefined)
         sendHash(txHash as string)
         return txHash
-      }
-      case 'eth_signMessage': {
-        if (!signer) throw new Error('Wallet not connected')
-        const p = params as unknown as EthSignMessageParams
-        const signature = await signer.signMessage(p.message)
-        sendSignMsg(signature)
-        return signature
       }
       case 'personal_sign': {
         if (!walletProvider) throw new Error('Wallet not connected')
@@ -414,27 +399,15 @@ export const useEthereumMethods = ({
       }
       case 'eth_getLogs': {
         const p = params as unknown as EthGetLogsParams
-        console.log('eth_getLogs params:', p)
         const filter = {
           address: hexlify(p.address),
           fromBlock: p.fromBlock,
           toBlock: p.toBlock,
         }
-        console.log('eth_getLogs filter:', filter)
-        console.log('rpcProvider type:', typeof rpcProvider, rpcProvider)
-
-        // Try direct RPC call
-        try {
-          const result = await rpcProvider.request({
-            method: 'eth_getLogs',
-            params: [filter],
-          })
-          console.log('eth_getLogs result:', result)
-          return result
-        } catch (error) {
-          console.error('eth_getLogs error:', error)
-          throw error
-        }
+        return rpcProvider.request({
+          method: 'eth_getLogs',
+          params: [filter],
+        })
       }
       case 'eth_mining': {
         return rpcProvider.request({ method: 'eth_mining', params: [] })

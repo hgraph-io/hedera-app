@@ -76,20 +76,6 @@ export const ethMethodConfigs: Record<string, MethodConfig> = {
       },
     ],
   },
-  eth_signMessage: {
-    name: 'Sign Message',
-    requiresWallet: true,
-    fields: [
-      {
-        name: 'message',
-        label: 'Message',
-        type: 'text',
-        placeholder: 'Enter message to sign',
-        defaultValue: 'Hello Reown AppKit!',
-        required: true,
-      },
-    ],
-  },
   personal_sign: {
     name: 'Personal Sign',
     requiresWallet: true,

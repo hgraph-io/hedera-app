@@ -179,22 +179,6 @@ const eip155Methods: MethodConfig[] = [
   },
   // Signing Methods
   {
-    name: 'eth_signMessage',
-    displayName: 'Sign Message (eth_signMessage)',
-    description: 'Sign a message with your account',
-    requiresWallet: true,
-    params: [
-      {
-        name: 'message',
-        label: 'Message',
-        type: 'textarea',
-        placeholder: 'Enter message to sign',
-        required: true,
-        defaultValue: 'Hello from Ethereum!',
-      },
-    ],
-  },
-  {
     name: 'personal_sign',
     displayName: 'Personal Sign (personal_sign)',
     description: 'Sign a message using personal_sign',
@@ -664,7 +648,6 @@ export function MethodExecutor({
         params.address = address
       }
 
-      console.log('Executing method:', currentMethod.name, 'with params:', params)
       const data = await onExecute(currentMethod.name, params)
       setResult({ success: true, data })
     } catch (error) {
