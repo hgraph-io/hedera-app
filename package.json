@@ -11,11 +11,11 @@
     "test": "npm run build && vitest run --coverage"
   },
   "dependencies": {
-    "@hashgraph/hedera-wallet-connect": "file:../../hedera-wallet-connect",
+    "@hashgraph/hedera-wallet-connect": "2.0.4-canary.3ca04e9.0",
     "@hashgraph/sdk": "^2.72.0",
-    "@reown/appkit": "^1.7.16",
-    "@reown/appkit-adapter-ethers": "^1.7.16",
-    "@reown/appkit-core": "^1.7.16",
+    "@reown/appkit": "^1.8.4",
+    "@reown/appkit-adapter-ethers": "^1.8.4",
+    "@reown/appkit-core": "^1.8.4",
     "@walletconnect/sign-client": "2.19.1",
     "@walletconnect/universal-provider": "2.21.5",
     "@walletconnect/utils": "2.19.1",

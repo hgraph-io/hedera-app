@@ -202,7 +202,7 @@ function V2AppContent({
 
   // Setup Hedera methods
   const { executeHederaMethod } = useHederaMethods(
-    appKitConfig?.universalProvider,
+    appKitConfig?.universalProvider || ({} as any),
     hederaAccount || '',
     setTransactionId,
     setSignedMsg,

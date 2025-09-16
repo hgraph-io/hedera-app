@@ -148,7 +148,10 @@ export function useDAppConnectorV1() {
 
           if (v1Session) {
             console.log('Restored existing V1 session')
-            const { signers, accountId } = updateSigners(dAppConnector, v1Session as SessionTypes.Struct)
+            const { signers, accountId } = updateSigners(
+              dAppConnector,
+              v1Session as SessionTypes.Struct,
+            )
 
             setState((prev) => ({
               ...prev,
@@ -255,7 +258,7 @@ export function useDAppConnectorV1() {
             }
           ).walletConnectClient
           const sessions = walletClient?.session?.getAll?.() || []
-          session = sessions[0] || null
+          session = (sessions[0] as SessionTypes.Struct) || null
         }
 
         if (session) {

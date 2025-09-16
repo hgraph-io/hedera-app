@@ -263,12 +263,12 @@ export function useV1Methods(
               transactionList: transactionList,
             })
 
-            if (setTransactionId && walletResponse?.transactionId) {
-              setTransactionId(walletResponse.transactionId)
+            if (setTransactionId && (walletResponse as any)?.transactionId) {
+              setTransactionId((walletResponse as any).transactionId)
             }
 
             result = {
-              transactionId: walletResponse?.transactionId,
+              transactionId: (walletResponse as any)?.transactionId,
               status: 'SUCCESS',
             }
             return result
