@@ -48,7 +48,7 @@ export async function createDynamicConfig(projectId: string, rpcUrl: string) {
   }
 
   // Add chains if supported by the provider
-  const initOpts = providerOpts as any
+  const initOpts = providerOpts as Record<string, unknown>
   if (HederaProvider.init.length > 0) {
     // Try to configure chains for testnet preference
     const testnetChainId = HederaChainDefinition.Native.Testnet.id
@@ -65,8 +65,10 @@ export async function createDynamicConfig(projectId: string, rpcUrl: string) {
   // Create AppKit modal
   const modal = createAppKit({
     adapters: [nativeHederaAdapter, eip155HederaAdapter],
-    universalProvider: universalProvider as any,
-    defaultNetwork: HederaChainDefinition.Native.Testnet as any,
+    // @ts-expect-error universalProvider type compatibility
+    universalProvider: universalProvider,
+    // @ts-expect-error defaultNetwork type compatibility
+    defaultNetwork: HederaChainDefinition.Native.Testnet,
     projectId,
     metadata,
     networks,

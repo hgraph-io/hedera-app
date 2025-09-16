@@ -1,7 +1,7 @@
 /**
  * Decode and format signature data for display
  */
-export function decodeSignature(signatureData: string | any): {
+export function decodeSignature(signatureData: string | unknown): {
   formatted: string
   details: {
     raw?: string
@@ -64,10 +64,23 @@ export function decodeSignature(signatureData: string | any): {
   }
 }
 
+interface SignatureMap {
+  sigMap?: { sigPair?: unknown[] | unknown }
+  sigPair?: unknown[] | unknown
+}
+
+interface SignaturePair {
+  pubKeyPrefix?: string
+  publicKey?: string
+  ed25519?: string
+  ECDSASecp256k1?: string
+  signature?: string
+}
+
 /**
  * Parse Hedera SignatureMap format
  */
-function parseSignatureMap(signatureMap: any): {
+function parseSignatureMap(signatureMap: unknown): {
   formatted: string
   details: {
     raw?: string
@@ -80,15 +93,18 @@ function parseSignatureMap(signatureMap: any): {
 } {
   try {
     // Handle SignatureMap structure
-    if (signatureMap.sigMap || signatureMap.sigPair) {
-      const sigPairs = signatureMap.sigMap?.sigPair || signatureMap.sigPair || []
-      const firstSig = Array.isArray(sigPairs) ? sigPairs[0] : sigPairs
+    const sigMapObj = signatureMap as SignatureMap
+    if (sigMapObj.sigMap || sigMapObj.sigPair) {
+      const sigPairs = sigMapObj.sigMap?.sigPair || sigMapObj.sigPair || []
+      const firstSig = Array.isArray(sigPairs)
+        ? (sigPairs[0] as SignaturePair)
+        : (sigPairs as SignaturePair)
 
       if (firstSig) {
         const pubKey = firstSig.pubKeyPrefix || firstSig.publicKey
         const sig = firstSig.ed25519 || firstSig.ECDSASecp256k1 || firstSig.signature
 
-        const details: any = {
+        const details: Record<string, string> = {
           raw: JSON.stringify(signatureMap),
         }
 
@@ -130,7 +146,7 @@ function parseSignatureMap(signatureMap: any): {
         raw: JSON.stringify(signatureMap),
       },
     }
-  } catch (error) {
+  } catch {
     return {
       formatted: 'Error parsing signature map',
       details: {
@@ -182,7 +198,7 @@ export async function verifySignature(
  * Format signature for display with proper decoding
  */
 export function formatSignatureDisplay(
-  signature: string | any,
+  signature: string | unknown,
   message?: string,
 ): {
   display: string

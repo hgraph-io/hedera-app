@@ -6,7 +6,7 @@ import { decodeSignature, formatSignatureDisplay } from '../utils/signatureVerif
 interface UseV1MethodsState {
   isExecuting: boolean
   error: string | null
-  result: any
+  result: unknown
 }
 
 export function useV1Methods(
@@ -22,7 +22,16 @@ export function useV1Methods(
   })
 
   const executeV1Method = useCallback(
-    async (method: string, params?: any) => {
+    async (
+      method: string,
+      params?: {
+        to?: string
+        amount?: number
+        recipientId?: string
+        message?: string
+        maxFee?: string
+      },
+    ) => {
       if (!signers || signers.length === 0) {
         setState((prev) => ({
           ...prev,
@@ -35,7 +44,7 @@ export function useV1Methods(
 
       try {
         const signer = signers[0]
-        let result: any
+        let result: unknown
 
         switch (method) {
           case 'hedera_getAccountInfo': {
@@ -75,7 +84,7 @@ export function useV1Methods(
               .addHbarTransfer(accountId.toString(), -params.amount)
               .addHbarTransfer(AccountId.fromString(params.to), params.amount)
 
-            const signedTx = await signer.signTransaction(transaction as any)
+            const signedTx = await signer.signTransaction(transaction as Transaction)
             const txResponse = await signedTx.executeWithSigner(signer)
             const receipt = await txResponse.getReceiptWithSigner(signer)
 
@@ -153,7 +162,7 @@ export function useV1Methods(
         return null
       }
     },
-    [signers],
+    [signers, setTransactionId, setSignedMsg, setNodes],
   )
 
   return {

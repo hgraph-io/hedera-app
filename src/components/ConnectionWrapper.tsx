@@ -3,7 +3,7 @@ import { ReactNode } from 'react'
 interface ConnectionWrapperProps {
   children: ReactNode
   onConnectionError?: (error: Error) => void
-  universalProvider?: any
+  universalProvider?: unknown
 }
 
 export function ConnectionWrapper({ children }: ConnectionWrapperProps) {

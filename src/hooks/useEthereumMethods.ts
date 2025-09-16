@@ -141,7 +141,14 @@ export const useEthereumMethods = ({
 
   if (walletProvider && chainId) {
     // Try to get the HTTP provider from the wallet provider
-    const providers = walletProvider.rpcProviders as any
+    const providers = walletProvider.rpcProviders as unknown as {
+      eip155?: {
+        httpProviders?: Record<
+          number,
+          { request: (args: { method: string; params: unknown[] }) => Promise<unknown> }
+        >
+      }
+    }
 
     if (providers?.eip155?.httpProviders?.[chainId]) {
       rpcProvider = providers.eip155.httpProviders[chainId]

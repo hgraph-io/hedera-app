@@ -4,7 +4,7 @@ import { HederaJsonRpcMethod } from '@hashgraph/hedera-wallet-connect'
 interface MethodExecutorProps {
   namespace: 'hedera' | 'eip155'
   isConnected: boolean
-  onExecute: (method: string, params: Record<string, string>) => Promise<any>
+  onExecute: (method: string, params: Record<string, string>) => Promise<unknown>
   address?: string
 }
 
@@ -600,7 +600,7 @@ export function MethodExecutor({
   const [selectedMethod, setSelectedMethod] = useState<string>('')
   const [formValues, setFormValues] = useState<Record<string, string>>({})
   const [isExecuting, setIsExecuting] = useState(false)
-  const [result, setResult] = useState<{ success: boolean; data: any } | null>(null)
+  const [result, setResult] = useState<{ success: boolean; data: unknown } | null>(null)
 
   const methods = namespace === 'hedera' ? hederaMethods : eip155Methods
   const currentMethod = methods.find((m) => m.name === selectedMethod)

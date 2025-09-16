@@ -48,7 +48,7 @@ export const useHederaMethods = (
       case 'hedera_executeTransaction': {
         if (!signedHederaTx)
           throw Error('Transaction not signed, use hedera_signTransaction first')
-        const transactionList = transactionToBase64String(signedHederaTx as any)
+        const transactionList = transactionToBase64String(signedHederaTx as Transaction)
         const result = await walletProvider.hedera_executeTransaction({ transactionList })
         setSignedHederaTx(undefined)
         sendTxId(result.transactionId)
@@ -95,7 +95,7 @@ export const useHederaMethods = (
           .freezeWith(null)
         const transactionSigned = await walletProvider.hedera_signTransaction({
           signerAccountId: 'hedera:testnet:' + accountId,
-          transactionBody: transaction as any,
+          transactionBody: transaction as Transaction,
         })
         setSignedHederaTx(transactionSigned as unknown as HederaTransaction)
         return 'Transaction signed successfully'
@@ -110,7 +110,7 @@ export const useHederaMethods = (
           .addHbarTransfer(p.recipientId, hbarAmount)
         const result = await walletProvider.hedera_signAndExecuteTransaction({
           signerAccountId: 'hedera:testnet:' + accountId,
-          transactionList: transactionToBase64String(transaction as any),
+          transactionList: transactionToBase64String(transaction as Transaction),
         })
         sendTxId(result.transactionId)
         return result.transactionId
@@ -120,7 +120,7 @@ export const useHederaMethods = (
         const query = new AccountInfoQuery().setAccountId(accountId)
         const queryParams: SignAndExecuteQueryParams = {
           signerAccountId: 'hedera:testnet:' + accountId,
-          query: queryToBase64String(query as any),
+          query: queryToBase64String(query as Query<AccountInfo>),
         }
         const { response } = await walletProvider.hedera_signAndExecuteQuery(queryParams)
         const accountInfo = AccountInfo.fromBytes(Buffer.from(response, 'base64'))

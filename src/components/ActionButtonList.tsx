@@ -11,7 +11,7 @@ interface ActionButtonListProps {
   ethMethods?: Method[]
   onClearState?: () => void
   onDisconnect?: () => void
-  jsonRpcProvider?: any
+  jsonRpcProvider?: unknown
 }
 
 export const ActionButtonList = ({

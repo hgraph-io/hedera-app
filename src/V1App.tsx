@@ -47,7 +47,7 @@ export function V1App() {
       }
     }
     checkV1Session()
-  }, []) // Only on mount
+  }, [v1Connection])
 
   // Setup V1 method executor
   const { executeV1Method } = v1Methods

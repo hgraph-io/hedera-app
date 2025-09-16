@@ -33,26 +33,28 @@ export const InfoList = ({
 }: InfoListProps) => {
   const [statusEthTx, setStatusEthTx] = useState('')
 
-  // Only use AppKit hooks when in V2 mode
+  // Always call hooks unconditionally
+  const theme = useAppKitTheme()
+  const state = useAppKitState()
+  const network = useAppKitNetworkCore()
+  const account = useAppKitAccount()
+  const walletInfo = useWalletInfo()
+  const provider = useAppKitProvider<HederaProvider>('eip155')
+
+  // Only use hook values when in V2 mode
   const { themeMode, themeVariables } =
+    connectionMode === 'v2' ? theme : { themeMode: undefined, themeVariables: undefined }
+  const { activeChain, selectedNetworkId } =
     connectionMode === 'v2'
-      ? useAppKitTheme()
-      : { themeMode: undefined, themeVariables: undefined }
-  const state =
-    connectionMode === 'v2'
-      ? useAppKitState()
-      : { activeChain: undefined, loading: false, open: false, selectedNetworkId: undefined }
-  const { chainId } = connectionMode === 'v2' ? useAppKitNetworkCore() : { chainId: undefined }
+      ? state
+      : { activeChain: undefined, selectedNetworkId: undefined }
+  const { chainId } = connectionMode === 'v2' ? network : { chainId: undefined }
   const { address, caipAddress, isConnected, status } =
     connectionMode === 'v2'
-      ? useAppKitAccount()
+      ? account
       : { address: undefined, caipAddress: undefined, isConnected: false, status: undefined }
-  const walletInfo = connectionMode === 'v2' ? useWalletInfo() : { walletInfo: undefined }
-  const { walletProvider } =
-    connectionMode === 'v2'
-      ? useAppKitProvider<HederaProvider>('eip155')
-      : { walletProvider: undefined }
-  const isEthChain = state.activeChain == 'eip155'
+  const { walletProvider } = connectionMode === 'v2' ? provider : { walletProvider: undefined }
+  const isEthChain = activeChain == 'eip155'
 
   useEffect(() => {
     const checkTransactionStatus = async () => {
@@ -92,7 +94,7 @@ export const InfoList = ({
       }
     }
     checkTransactionStatus()
-  }, [hash, walletProvider, chainId, state.activeChain, txId, isEthChain])
+  }, [hash, walletProvider, chainId, activeChain, txId, isEthChain])
 
   return (
     <>
@@ -114,7 +116,7 @@ export const InfoList = ({
             Hash:{' '}
             <a
               href={`https://hashscan.io/${
-                state.selectedNetworkId?.toString() == 'eip155:296' ? 'testnet/' : ''
+                selectedNetworkId?.toString() == 'eip155:296' ? 'testnet/' : ''
               }transaction/${hash}`}
               target="_blank"
             >
@@ -134,7 +136,7 @@ export const InfoList = ({
             Id:
             <a
               href={`https://hashscan.io/${
-                state.selectedNetworkId?.toString() == 'hedera:testnet' ? 'testnet/' : ''
+                selectedNetworkId?.toString() == 'hedera:testnet' ? 'testnet/' : ''
               }transaction/${txId}`}
               target="_blank"
             >

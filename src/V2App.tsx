@@ -34,7 +34,14 @@ export interface FunctionResult {
 // Main V2App component that handles configuration
 export function V2App() {
   const [isConfigured, setIsConfigured] = useState(false)
-  const [appKitConfig, setAppKitConfig] = useState<any>(null)
+  const [appKitConfig, setAppKitConfig] = useState<{
+    projectId: string
+    rpcUrl: string
+    jsonRpcProvider: JsonRpcProvider
+    universalProvider: HederaProvider
+    nativeHederaAdapter: HederaAdapter
+    eip155HederaAdapter: HederaAdapter
+  } | null>(null)
 
   // Check for existing configuration on mount
   useEffect(() => {
@@ -107,7 +114,7 @@ export function V2App() {
     createAppKit({
       adapters: [nativeHederaAdapter, eip155HederaAdapter],
       logger: 'error' as const,
-      //@ts-ignore
+      // @ts-expect-error universalProvider type compatibility
       universalProvider,
       projectId,
       metadata,
@@ -151,7 +158,18 @@ export function V2App() {
 }
 
 // Separate component that uses AppKit hooks (only rendered after createAppKit is called)
-function V2AppContent({ appKitConfig }: { appKitConfig: any }) {
+function V2AppContent({
+  appKitConfig,
+}: {
+  appKitConfig: {
+    projectId: string
+    rpcUrl: string
+    jsonRpcProvider: JsonRpcProvider
+    universalProvider: HederaProvider
+    nativeHederaAdapter: HederaAdapter
+    eip155HederaAdapter: HederaAdapter
+  } | null
+}) {
   const { open } = useAppKit()
   const { disconnect } = useDisconnect()
   const { address, isConnected, caipAddress, status } = useAppKitAccount()
@@ -384,7 +402,7 @@ function V2AppContent({ appKitConfig }: { appKitConfig: any }) {
       )}
 
       {/* Results Display */}
-      {isConnected && (transactionHash || transactionId || signedMsg || nodes.length > 0) && (
+      {isConnected && (transactionHash || transactionId || signedMsg || (nodes && nodes.length > 0)) && (
         <div
           style={{
             padding: '20px',
@@ -412,7 +430,7 @@ function V2AppContent({ appKitConfig }: { appKitConfig: any }) {
               <pre style={{ fontSize: '12px', wordBreak: 'break-all' }}>{signedMsg}</pre>
             </div>
           )}
-          {nodes.length > 0 && (
+          {nodes && nodes.length > 0 && (
             <div style={{ marginBottom: '10px' }}>
               <strong>Node Addresses:</strong>
               <pre style={{ fontSize: '12px', wordBreak: 'break-all' }}>{nodes.join(', ')}</pre>
