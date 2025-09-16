@@ -42,7 +42,7 @@ export function useV1Methods(
             const accountId = signer.getAccountId()
             if (!accountId) throw new Error('Account ID not available')
 
-            const accountInfo = await signer.getLedgerClient().getAccountInfo(accountId)
+            const accountInfo = await signer.getAccountInfo()
             result = {
               accountId: accountInfo.accountId.toString(),
               balance: accountInfo.balance.toString(),
@@ -72,10 +72,10 @@ export function useV1Methods(
             if (!accountId) throw new Error('Account ID not available')
 
             const transaction = new TransferTransaction()
-              .addHbarTransfer(accountId, -params.amount)
+              .addHbarTransfer(accountId.toString(), -params.amount)
               .addHbarTransfer(AccountId.fromString(params.to), params.amount)
 
-            const signedTx = await signer.signTransaction(transaction)
+            const signedTx = await signer.signTransaction(transaction as any)
             const txResponse = await signedTx.executeWithSigner(signer)
             const receipt = await txResponse.getReceiptWithSigner(signer)
 

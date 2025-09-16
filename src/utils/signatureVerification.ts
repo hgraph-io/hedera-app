@@ -1,5 +1,3 @@
-import { PublicKey } from '@hashgraph/sdk'
-
 /**
  * Decode and format signature data for display
  */
@@ -150,7 +148,6 @@ function parseSignatureMap(signatureMap: any): {
 export async function verifySignature(
   message: string,
   signature: string,
-  publicKey?: string,
 ): Promise<{
   isValid: boolean
   details: string

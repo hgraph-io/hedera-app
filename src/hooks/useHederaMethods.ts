@@ -48,7 +48,7 @@ export const useHederaMethods = (
       case 'hedera_executeTransaction': {
         if (!signedHederaTx)
           throw Error('Transaction not signed, use hedera_signTransaction first')
-        const transactionList = transactionToBase64String(signedHederaTx)
+        const transactionList = transactionToBase64String(signedHederaTx as any)
         const result = await walletProvider.hedera_executeTransaction({ transactionList })
         setSignedHederaTx(undefined)
         sendTxId(result.transactionId)
@@ -95,9 +95,9 @@ export const useHederaMethods = (
           .freezeWith(null)
         const transactionSigned = await walletProvider.hedera_signTransaction({
           signerAccountId: 'hedera:testnet:' + accountId,
-          transactionBody: transaction,
+          transactionBody: transaction as any,
         })
-        setSignedHederaTx(transactionSigned as HederaTransaction)
+        setSignedHederaTx(transactionSigned as unknown as HederaTransaction)
         return 'Transaction signed successfully'
       }
       case 'hedera_signAndExecuteTransaction': {
@@ -110,7 +110,7 @@ export const useHederaMethods = (
           .addHbarTransfer(p.recipientId, hbarAmount)
         const result = await walletProvider.hedera_signAndExecuteTransaction({
           signerAccountId: 'hedera:testnet:' + accountId,
-          transactionList: transactionToBase64String(transaction),
+          transactionList: transactionToBase64String(transaction as any),
         })
         sendTxId(result.transactionId)
         return result.transactionId
@@ -120,7 +120,7 @@ export const useHederaMethods = (
         const query = new AccountInfoQuery().setAccountId(accountId)
         const queryParams: SignAndExecuteQueryParams = {
           signerAccountId: 'hedera:testnet:' + accountId,
-          query: queryToBase64String(query),
+          query: queryToBase64String(query as any),
         }
         const { response } = await walletProvider.hedera_signAndExecuteQuery(queryParams)
         const accountInfo = AccountInfo.fromBytes(Buffer.from(response, 'base64'))

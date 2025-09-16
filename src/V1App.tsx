@@ -19,7 +19,6 @@ export function V1App() {
   const [transactionId, setTransactionId] = useState('')
   const [signedMsg, setSignedMsg] = useState('')
   const [nodes, setNodes] = useState<string[]>([])
-  const [lastFunctionResult, setLastFunctionResult] = useState<FunctionResult | null>(null)
   const [showV1Modal, setShowV1Modal] = useState(false)
   const [showConfigModal, setShowConfigModal] = useState(false)
 
@@ -36,7 +35,6 @@ export function V1App() {
     setTransactionId('')
     setSignedMsg('')
     setNodes([])
-    setLastFunctionResult(null)
   }
 
   // Check for existing V1 session on mount
@@ -321,7 +319,6 @@ export function V1App() {
                   setTransactionId('')
                   setSignedMsg('')
                   setNodes([])
-                  setLastFunctionResult(null)
                 }}
                 style={{
                   padding: '8px 16px',

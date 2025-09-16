@@ -57,7 +57,7 @@ export function useDAppConnectorV1() {
         // Method 1: Try with AccountId object
         try {
           const accountId = AccountId.fromString(accountIdStr)
-          signer = connector.getSigner(accountId)
+          signer = connector.getSigner(accountId as any)
         } catch (e) {
           console.log('Method 1 failed, trying method 2')
         }
@@ -408,7 +408,7 @@ export function useDAppConnectorV1() {
       const existingV1Session = sessionStorage.getItem('hwcV1Session')
       if (existingV1Session) {
         try {
-          const sessionData = JSON.parse(existingV1Session)
+          JSON.parse(existingV1Session)
           console.log(
             'Found existing V1 session data, will restore on first connection attempt',
           )

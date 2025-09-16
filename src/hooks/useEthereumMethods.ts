@@ -149,7 +149,7 @@ export const useEthereumMethods = ({
       // Fallback to the eip155Provider directly
       rpcProvider = {
         request: (args: { method: string; params: unknown[] }) =>
-          walletProvider.eip155Provider.request({
+          walletProvider.eip155Provider!.request({
             request: args,
             chainId: `eip155:${chainId}`,
             topic: walletProvider.session?.topic || '',

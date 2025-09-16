@@ -65,8 +65,8 @@ export async function createDynamicConfig(projectId: string, rpcUrl: string) {
   // Create AppKit modal
   const modal = createAppKit({
     adapters: [nativeHederaAdapter, eip155HederaAdapter],
-    universalProvider,
-    defaultNetwork: HederaChainDefinition.Native.Testnet,
+    universalProvider: universalProvider as any,
+    defaultNetwork: HederaChainDefinition.Native.Testnet as any,
     projectId,
     metadata,
     networks,

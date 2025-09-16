@@ -8,7 +8,11 @@ import {
   useAppKitNetworkCore,
 } from '@reown/appkit/react'
 import { HederaProvider } from '@hashgraph/hedera-wallet-connect'
-import { FunctionResult } from '../App'
+
+export interface FunctionResult {
+  functionName: string
+  result: string
+}
 
 interface InfoListProps {
   hash: string

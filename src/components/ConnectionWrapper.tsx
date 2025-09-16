@@ -1,5 +1,4 @@
-import { ReactNode, useEffect, useState, useRef } from 'react'
-import { useAppKitAccount, useAppKitState } from '@reown/appkit/react'
+import { ReactNode } from 'react'
 
 interface ConnectionWrapperProps {
   children: ReactNode
@@ -7,11 +6,7 @@ interface ConnectionWrapperProps {
   universalProvider?: any
 }
 
-export function ConnectionWrapper({
-  children,
-  onConnectionError,
-  universalProvider,
-}: ConnectionWrapperProps) {
+export function ConnectionWrapper({ children }: ConnectionWrapperProps) {
   // Simply pass through children without complex validation
   // The connection state is already managed by AppKit and the App component
   return <>{children}</>
