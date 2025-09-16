@@ -19,6 +19,16 @@ export function SignedTransactionModal({
   signedTransaction,
   transactionDetails,
 }: SignedTransactionModalProps) {
+  // Handle escape key
+  useEffect(() => {
+    if (!isOpen) return
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [isOpen, onClose])
+
   if (!signedTransaction) return null
 
   // Get transaction information
@@ -80,16 +90,6 @@ export function SignedTransactionModal({
   }
 
   const txInfo = getTransactionInfo()
-
-  // Handle escape key
-  useEffect(() => {
-    if (!isOpen) return
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', handleKey)
-    return () => document.removeEventListener('keydown', handleKey)
-  }, [isOpen, onClose])
 
   if (!isOpen) return null
 

@@ -1,6 +1,7 @@
 import './App.css'
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { Transaction } from '@hashgraph/sdk'
 import { ConnectionWrapper } from './components/ConnectionWrapper'
 import { V1ConnectionModal } from './components/V1ConnectionModal'
 import { ConfigurationModal } from './components/ConfigurationModal'
@@ -23,7 +24,7 @@ export function V1App() {
   const [showV1Modal, setShowV1Modal] = useState(false)
   const [showConfigModal, setShowConfigModal] = useState(false)
   const [showSignedTxModal, setShowSignedTxModal] = useState(false)
-  const [signedTransaction, setSignedTransaction] = useState<any>(null)
+  const [signedTransaction, setSignedTransaction] = useState<Transaction | null>(null)
   const [transactionDetails, setTransactionDetails] = useState<
     | {
         from?: string

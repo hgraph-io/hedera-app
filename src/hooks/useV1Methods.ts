@@ -170,7 +170,11 @@ export function useV1Methods(
 
             const signedTx = await signer.signTransaction(transaction as Transaction)
             console.log('Signed transaction type:', typeof signedTx, signedTx)
-            console.log('Has executeWithSigner?', typeof (signedTx as any)?.executeWithSigner)
+            console.log(
+              'Has executeWithSigner?',
+              typeof (signedTx as Transaction & { executeWithSigner?: unknown })
+                ?.executeWithSigner,
+            )
             if (setSignedTransaction) {
               setSignedTransaction(signedTx)
             }
@@ -200,7 +204,18 @@ export function useV1Methods(
               )
             }
 
-            const txResponse = await (signedTransaction as any).executeWithSigner(signer)
+            const txResponse = await (
+              signedTransaction as Transaction & {
+                executeWithSigner: (
+                  signer: DAppSigner,
+                ) => Promise<{
+                  getReceiptWithSigner: (
+                    signer: DAppSigner,
+                  ) => Promise<{ status: { toString: () => string } }>
+                  transactionId?: { toString: () => string }
+                }>
+              }
+            ).executeWithSigner(signer)
             const receipt = await txResponse.getReceiptWithSigner(signer)
 
             if (setTransactionId && txResponse.transactionId) {
@@ -263,12 +278,13 @@ export function useV1Methods(
               transactionList: transactionList,
             })
 
-            if (setTransactionId && (walletResponse as any)?.transactionId) {
-              setTransactionId((walletResponse as any).transactionId)
+            const response = walletResponse as { transactionId?: string }
+            if (setTransactionId && response?.transactionId) {
+              setTransactionId(response.transactionId)
             }
 
             result = {
-              transactionId: (walletResponse as any)?.transactionId,
+              transactionId: response?.transactionId,
               status: 'SUCCESS',
             }
             return result

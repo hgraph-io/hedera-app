@@ -129,8 +129,9 @@ function parseSignatureMap(signatureMap: unknown): {
     }
 
     // Handle direct signature string
-    if ((signatureMap as any).signature) {
-      const sigHex = Buffer.from((signatureMap as any).signature, 'base64').toString('hex')
+    const sigMap = signatureMap as { signature?: string }
+    if (sigMap.signature) {
+      const sigHex = Buffer.from(sigMap.signature, 'base64').toString('hex')
       return {
         formatted: `0x${sigHex}`,
         details: {
