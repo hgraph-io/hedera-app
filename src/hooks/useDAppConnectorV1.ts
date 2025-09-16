@@ -148,12 +148,12 @@ export function useDAppConnectorV1() {
 
           if (v1Session) {
             console.log('Restored existing V1 session')
-            const { signers, accountId } = updateSigners(dAppConnector, v1Session)
+            const { signers, accountId } = updateSigners(dAppConnector, v1Session as SessionTypes.Struct)
 
             setState((prev) => ({
               ...prev,
               isConnected: true,
-              session: v1Session,
+              session: v1Session as SessionTypes.Struct,
               signers,
               accountId,
             }))
@@ -162,7 +162,7 @@ export function useDAppConnectorV1() {
             sessionStorage.setItem(
               'hwcV1Session',
               JSON.stringify({
-                topic: v1Session.topic,
+                topic: (v1Session as SessionTypes.Struct).topic,
                 accountId,
                 timestamp: Date.now(),
               }),

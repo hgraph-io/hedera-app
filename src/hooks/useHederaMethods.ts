@@ -4,6 +4,7 @@ import {
   AccountInfoQuery,
   Hbar,
   Transaction as HederaTransaction,
+  Query,
   TransactionId,
   TransferTransaction,
 } from '@hashgraph/sdk'
@@ -48,7 +49,7 @@ export const useHederaMethods = (
       case 'hedera_executeTransaction': {
         if (!signedHederaTx)
           throw Error('Transaction not signed, use hedera_signTransaction first')
-        const transactionList = transactionToBase64String(signedHederaTx as Transaction)
+        const transactionList = transactionToBase64String(signedHederaTx as HederaTransaction)
         const result = await walletProvider.hedera_executeTransaction({ transactionList })
         setSignedHederaTx(undefined)
         sendTxId(result.transactionId)
@@ -95,7 +96,7 @@ export const useHederaMethods = (
           .freezeWith(null)
         const transactionSigned = await walletProvider.hedera_signTransaction({
           signerAccountId: 'hedera:testnet:' + accountId,
-          transactionBody: transaction as Transaction,
+          transactionBody: transaction as HederaTransaction,
         })
         setSignedHederaTx(transactionSigned as unknown as HederaTransaction)
         return 'Transaction signed successfully'
@@ -110,7 +111,7 @@ export const useHederaMethods = (
           .addHbarTransfer(p.recipientId, hbarAmount)
         const result = await walletProvider.hedera_signAndExecuteTransaction({
           signerAccountId: 'hedera:testnet:' + accountId,
-          transactionList: transactionToBase64String(transaction as Transaction),
+          transactionList: transactionToBase64String(transaction as HederaTransaction),
         })
         sendTxId(result.transactionId)
         return result.transactionId

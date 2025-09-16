@@ -17,9 +17,6 @@ import {
 } from '@hashgraph/hedera-wallet-connect'
 import { JsonRpcProvider } from 'ethers'
 import { metadata, networks, DEFAULT_RPC_URL } from './config'
-// import { ActionButtonList } from './components/ActionButtonList'
-// import { InfoList } from './components/InfoList'
-// import { V2NamespaceModal } from './components/V2NamespaceModal'
 import { ConfigurationModal } from './components/ConfigurationModal'
 import { InitialConfigForm } from './components/InitialConfigForm'
 import { useHederaMethods } from './hooks/useHederaMethods'
@@ -472,29 +469,7 @@ function V2AppContent({
           </button>
         </div>
       </div>
-      {/*
-      <InfoList
-        hash={transactionHash}
-        txId={transactionId}
-        signedMsg={signedMsg}
-        nodes={nodes}
-        lastFunctionResult={lastFunctionResult}
-        connectionMode="v2"
-      />
-			*/}
-      {/* V2 Namespace Selection Modal */}
-      {/*
-      <V2NamespaceModal
-        isOpen={modal}
-        onClose={() => showModal(false)}
-        onConnect={async () =>
-          await open({
-            view: 'Connect',
-            namespace: hederaNamespace, // Force hedera namespace for initial connection
-          })
-        }
-      />
-			*/}
+
       {/* Configuration Modal */}
       <ConfigurationModal
         isOpen={showConfigModal}

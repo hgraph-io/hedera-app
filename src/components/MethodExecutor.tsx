@@ -611,7 +611,7 @@ export function MethodExecutor({
 
   const methods =
     namespace === 'hedera'
-      ? hederaMethods.filter((m) => !hiddenHederaMethods.includes(m.name))
+      ? hederaMethods.filter((m) => !hiddenHederaMethods.includes(m.name as HederaJsonRpcMethod))
       : eip155Methods
   const currentMethod = methods.find((m) => m.name === selectedMethod)
 
