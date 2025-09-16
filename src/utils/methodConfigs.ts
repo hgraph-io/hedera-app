@@ -11,12 +11,16 @@ export interface MethodConfig {
   name: string
   fields: FieldConfig[]
   description?: string
+  requiresWallet?: boolean // true for wallet signature, false for RPC provider
 }
 
 // Configurations for Ethereum methods that require parameters
+// Methods are organized with wallet-required methods first, then RPC-only methods
 export const ethMethodConfigs: Record<string, MethodConfig> = {
+  // === WALLET SIGNATURE METHODS === //
   eth_sendTransaction: {
     name: 'Send Transaction',
+    requiresWallet: true,
     fields: [
       {
         name: 'to',
@@ -45,6 +49,7 @@ export const ethMethodConfigs: Record<string, MethodConfig> = {
   },
   eth_signTransaction: {
     name: 'Sign Transaction',
+    requiresWallet: true,
     fields: [
       {
         name: 'to',
@@ -71,21 +76,9 @@ export const ethMethodConfigs: Record<string, MethodConfig> = {
       },
     ],
   },
-  eth_signMessage: {
-    name: 'Sign Message',
-    fields: [
-      {
-        name: 'message',
-        label: 'Message',
-        type: 'text',
-        placeholder: 'Enter message to sign',
-        defaultValue: 'Hello Reown AppKit!',
-        required: true,
-      },
-    ],
-  },
   personal_sign: {
     name: 'Personal Sign',
+    requiresWallet: true,
     fields: [
       {
         name: 'message',
@@ -99,6 +92,8 @@ export const ethMethodConfigs: Record<string, MethodConfig> = {
   },
   eth_sign: {
     name: 'Eth Sign (Legacy)',
+    requiresWallet: true,
+    description: 'Legacy signing method - most wallets show security warnings',
     fields: [
       {
         name: 'message',
@@ -110,8 +105,11 @@ export const ethMethodConfigs: Record<string, MethodConfig> = {
       },
     ],
   },
+
+  // === RPC PROVIDER METHODS === //
   eth_call: {
     name: 'Call Contract',
+    requiresWallet: false,
     fields: [
       {
         name: 'to',
@@ -133,6 +131,7 @@ export const ethMethodConfigs: Record<string, MethodConfig> = {
   },
   eth_getBalance: {
     name: 'Get Balance',
+    requiresWallet: false,
     fields: [
       {
         name: 'address',
@@ -145,6 +144,7 @@ export const ethMethodConfigs: Record<string, MethodConfig> = {
   },
   eth_feeHistory: {
     name: 'Get Fee History',
+    requiresWallet: false,
     fields: [
       {
         name: 'newestBlock',
@@ -166,6 +166,7 @@ export const ethMethodConfigs: Record<string, MethodConfig> = {
   },
   eth_getCode: {
     name: 'Get Contract Code',
+    requiresWallet: false,
     fields: [
       {
         name: 'address',
@@ -186,6 +187,7 @@ export const ethMethodConfigs: Record<string, MethodConfig> = {
   },
   eth_getStorageAt: {
     name: 'Get Storage At',
+    requiresWallet: false,
     fields: [
       {
         name: 'address',
@@ -214,6 +216,7 @@ export const ethMethodConfigs: Record<string, MethodConfig> = {
   },
   eth_getTransactionCount: {
     name: 'Get Transaction Count',
+    requiresWallet: false,
     fields: [
       {
         name: 'address',
@@ -234,6 +237,7 @@ export const ethMethodConfigs: Record<string, MethodConfig> = {
   },
   eth_getTransactionByHash: {
     name: 'Get Transaction By Hash',
+    requiresWallet: false,
     fields: [
       {
         name: 'hash',
@@ -246,6 +250,7 @@ export const ethMethodConfigs: Record<string, MethodConfig> = {
   },
   eth_getTransactionReceipt: {
     name: 'Get Transaction Receipt',
+    requiresWallet: false,
     fields: [
       {
         name: 'hash',
@@ -258,6 +263,7 @@ export const ethMethodConfigs: Record<string, MethodConfig> = {
   },
   eth_getBlockByHash: {
     name: 'Get Block By Hash',
+    requiresWallet: false,
     fields: [
       {
         name: 'blockHash',
@@ -278,6 +284,7 @@ export const ethMethodConfigs: Record<string, MethodConfig> = {
   },
   eth_getBlockByNumber: {
     name: 'Get Block By Number',
+    requiresWallet: false,
     fields: [
       {
         name: 'blockTag',
@@ -291,6 +298,7 @@ export const ethMethodConfigs: Record<string, MethodConfig> = {
   },
   eth_getBlockTransactionCountByHash: {
     name: 'Get Block Transaction Count By Hash',
+    requiresWallet: false,
     fields: [
       {
         name: 'blockHash',
@@ -304,6 +312,7 @@ export const ethMethodConfigs: Record<string, MethodConfig> = {
   },
   eth_getBlockTransactionCountByNumber: {
     name: 'Get Block Transaction Count By Number',
+    requiresWallet: false,
     fields: [
       {
         name: 'blockTag',
@@ -317,6 +326,7 @@ export const ethMethodConfigs: Record<string, MethodConfig> = {
   },
   eth_getTransactionByBlockHashAndIndex: {
     name: 'Get Transaction By Block Hash And Index',
+    requiresWallet: false,
     fields: [
       {
         name: 'blockHash',
@@ -337,6 +347,7 @@ export const ethMethodConfigs: Record<string, MethodConfig> = {
   },
   eth_getTransactionByBlockNumberAndIndex: {
     name: 'Get Transaction By Block Number And Index',
+    requiresWallet: false,
     fields: [
       {
         name: 'blockNumber',
@@ -358,6 +369,7 @@ export const ethMethodConfigs: Record<string, MethodConfig> = {
   },
   eth_getFilterLogs: {
     name: 'Get Filter Logs',
+    requiresWallet: false,
     fields: [
       {
         name: 'filterId',
@@ -370,6 +382,7 @@ export const ethMethodConfigs: Record<string, MethodConfig> = {
   },
   eth_getFilterChanges: {
     name: 'Get Filter Changes',
+    requiresWallet: false,
     fields: [
       {
         name: 'filterId',
@@ -382,6 +395,7 @@ export const ethMethodConfigs: Record<string, MethodConfig> = {
   },
   eth_newFilter: {
     name: 'New Filter',
+    requiresWallet: false,
     fields: [
       {
         name: 'address',
@@ -410,6 +424,7 @@ export const ethMethodConfigs: Record<string, MethodConfig> = {
   },
   eth_uninstallFilter: {
     name: 'Uninstall Filter',
+    requiresWallet: false,
     fields: [
       {
         name: 'filterId',
@@ -422,6 +437,7 @@ export const ethMethodConfigs: Record<string, MethodConfig> = {
   },
   eth_signTypedData: {
     name: 'Sign Typed Data',
+    requiresWallet: true,
     fields: [
       {
         name: 'domain',
@@ -487,6 +503,7 @@ export const ethMethodConfigs: Record<string, MethodConfig> = {
   },
   eth_signTypedData_v3: {
     name: 'Sign Typed Data V3',
+    requiresWallet: true,
     fields: [
       {
         name: 'domain',
@@ -552,6 +569,7 @@ export const ethMethodConfigs: Record<string, MethodConfig> = {
   },
   eth_signTypedData_v4: {
     name: 'Sign Typed Data V4',
+    requiresWallet: true,
     fields: [
       {
         name: 'domain',
@@ -617,6 +635,7 @@ export const ethMethodConfigs: Record<string, MethodConfig> = {
   },
   eth_getLogs: {
     name: 'Get Logs',
+    requiresWallet: false,
     fields: [
       {
         name: 'address',

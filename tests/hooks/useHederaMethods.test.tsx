@@ -117,7 +117,11 @@ describe('useHederaMethods', () => {
     })
     await act(async () => {
       const msg = await execute('hedera_signMessage', { message: 'm' })
-      expect(msg).toBe('sig')
+      expect(msg).toEqual({
+        signatureMap: 'sig',
+        formatted: 'sig',
+        details: ['Message: "m"'],
+      })
     })
     await act(async () => {
       const q = await execute('hedera_signAndExecuteQuery', {})

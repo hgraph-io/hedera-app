@@ -57,17 +57,18 @@ export function useDAppConnectorV1() {
         // Method 1: Try with AccountId object
         try {
           const accountId = AccountId.fromString(accountIdStr)
-          signer = connector.getSigner(accountId)
-        } catch (e) {
+          signer = connector.getSigner(accountId as unknown as AccountId)
+        } catch {
           console.log('Method 1 failed, trying method 2')
         }
 
         // Method 2: Try getting all signers
         if (!signer) {
           try {
-            const allSigners = (connector as any).getSigners?.() || []
+            const allSigners =
+              (connector as unknown as { getSigners?: () => DAppSigner[] }).getSigners?.() || []
             signer = allSigners[0] || null
-          } catch (e) {
+          } catch {
             console.log('Method 2 failed, trying method 3')
           }
         }
@@ -75,8 +76,11 @@ export function useDAppConnectorV1() {
         // Method 3: Try with session topic
         if (!signer && session.topic) {
           try {
-            signer = (connector as any).getSigner(session.topic)
-          } catch (e) {
+            signer =
+              (
+                connector as unknown as { getSigner?: (topic: string) => DAppSigner }
+              ).getSigner?.(session.topic) || null
+          } catch {
             console.log('Method 3 failed')
           }
         }
@@ -118,7 +122,9 @@ export function useDAppConnectorV1() {
           ['https://walletconnect.hashpack.app'],
         )
 
-        await dAppConnector.init({ logger: 'error' } as any)
+        await dAppConnector.init({ logger: 'error' } as Parameters<
+          typeof dAppConnector.init
+        >[0])
 
         setState((prev) => ({
           ...prev,
@@ -128,20 +134,29 @@ export function useDAppConnectorV1() {
 
         // Check for existing V1 session after initialization
         if (checkExistingSession) {
-          const walletClient = (dAppConnector as any)?.walletConnectClient
+          const walletClient = (
+            dAppConnector as unknown as {
+              walletConnectClient?: { session?: { getAll?: () => unknown[] } }
+            }
+          )?.walletConnectClient
           const existingSessions = walletClient?.session?.getAll?.() || []
 
           // Look for V1 sessions (with hedera namespace)
-          const v1Session = existingSessions.find((s: any) => s.namespaces?.hedera)
+          const v1Session = existingSessions.find(
+            (s: unknown) => (s as { namespaces?: { hedera?: unknown } }).namespaces?.hedera,
+          )
 
           if (v1Session) {
             console.log('Restored existing V1 session')
-            const { signers, accountId } = updateSigners(dAppConnector, v1Session)
+            const { signers, accountId } = updateSigners(
+              dAppConnector,
+              v1Session as SessionTypes.Struct,
+            )
 
             setState((prev) => ({
               ...prev,
               isConnected: true,
-              session: v1Session,
+              session: v1Session as SessionTypes.Struct,
               signers,
               accountId,
             }))
@@ -150,7 +165,7 @@ export function useDAppConnectorV1() {
             sessionStorage.setItem(
               'hwcV1Session',
               JSON.stringify({
-                topic: v1Session.topic,
+                topic: (v1Session as SessionTypes.Struct).topic,
                 accountId,
                 timestamp: Date.now(),
               }),
@@ -237,9 +252,13 @@ export function useDAppConnectorV1() {
 
         // Get the session if not already set
         if (!session) {
-          const walletClient = (connector as any).walletConnectClient
+          const walletClient = (
+            connector as unknown as {
+              walletConnectClient?: { session?: { getAll?: () => unknown[] } }
+            }
+          ).walletConnectClient
           const sessions = walletClient?.session?.getAll?.() || []
-          session = sessions[0] || null
+          session = (sessions[0] as SessionTypes.Struct) || null
         }
 
         if (session) {
@@ -341,7 +360,9 @@ export function useDAppConnectorV1() {
   const getAvailableExtensions = useCallback((): ExtensionData[] => {
     if (!state.connector) return []
     const extensions =
-      (state.connector as any).extensions?.filter((ext: any) => ext.available) || []
+      (state.connector as unknown as { extensions?: ExtensionData[] }).extensions?.filter(
+        (ext: ExtensionData) => ext.available,
+      ) || []
 
     // Deduplicate extensions by ID
     const uniqueExtensions = extensions.reduce((acc: ExtensionData[], ext: ExtensionData) => {
@@ -408,12 +429,12 @@ export function useDAppConnectorV1() {
       const existingV1Session = sessionStorage.getItem('hwcV1Session')
       if (existingV1Session) {
         try {
-          const sessionData = JSON.parse(existingV1Session)
+          JSON.parse(existingV1Session)
           console.log(
             'Found existing V1 session data, will restore on first connection attempt',
           )
           // Don't initialize here - wait for user action
-        } catch (e) {
+        } catch {
           console.error('Invalid V1 session data in storage')
           sessionStorage.removeItem('hwcV1Session')
         }

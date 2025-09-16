@@ -4,6 +4,7 @@ import {
   AccountInfoQuery,
   Hbar,
   Transaction as HederaTransaction,
+  Query,
   TransactionId,
   TransferTransaction,
 } from '@hashgraph/sdk'
@@ -14,6 +15,7 @@ import {
   SignMessageParams,
   transactionToBase64String,
 } from '@hashgraph/hedera-wallet-connect'
+import { decodeSignature, formatSignatureDisplay } from '../utils/signatureVerification'
 
 export interface HederaSignTransactionParams {
   recipientId: string
@@ -47,7 +49,7 @@ export const useHederaMethods = (
       case 'hedera_executeTransaction': {
         if (!signedHederaTx)
           throw Error('Transaction not signed, use hedera_signTransaction first')
-        const transactionList = transactionToBase64String(signedHederaTx)
+        const transactionList = transactionToBase64String(signedHederaTx as HederaTransaction)
         const result = await walletProvider.hedera_executeTransaction({ transactionList })
         setSignedHederaTx(undefined)
         sendTxId(result.transactionId)
@@ -60,8 +62,27 @@ export const useHederaMethods = (
           message: p.message,
         }
         const { signatureMap } = await walletProvider.hedera_signMessage(signParams)
-        sendSignMsg(signatureMap)
-        return signatureMap
+
+        // Decode and format the signature for display
+        const { display, details } = formatSignatureDisplay(signatureMap, p.message)
+
+        console.log('V2 Signature Details:', {
+          message: p.message,
+          signatureMap,
+          decoded: decodeSignature(signatureMap),
+          display,
+          details,
+        })
+
+        // Send formatted display with details
+        const formattedOutput = [display, ...details].join('\n')
+        sendSignMsg(formattedOutput)
+
+        return {
+          signatureMap,
+          formatted: display,
+          details,
+        }
       }
       case 'hedera_signTransaction': {
         const p = params as unknown as HederaSignTransactionParams
@@ -75,9 +96,9 @@ export const useHederaMethods = (
           .freezeWith(null)
         const transactionSigned = await walletProvider.hedera_signTransaction({
           signerAccountId: 'hedera:testnet:' + accountId,
-          transactionBody: transaction,
+          transactionBody: transaction as HederaTransaction,
         })
-        setSignedHederaTx(transactionSigned as HederaTransaction)
+        setSignedHederaTx(transactionSigned as unknown as HederaTransaction)
         return 'Transaction signed successfully'
       }
       case 'hedera_signAndExecuteTransaction': {
@@ -90,7 +111,7 @@ export const useHederaMethods = (
           .addHbarTransfer(p.recipientId, hbarAmount)
         const result = await walletProvider.hedera_signAndExecuteTransaction({
           signerAccountId: 'hedera:testnet:' + accountId,
-          transactionList: transactionToBase64String(transaction),
+          transactionList: transactionToBase64String(transaction as HederaTransaction),
         })
         sendTxId(result.transactionId)
         return result.transactionId
@@ -100,7 +121,7 @@ export const useHederaMethods = (
         const query = new AccountInfoQuery().setAccountId(accountId)
         const queryParams: SignAndExecuteQueryParams = {
           signerAccountId: 'hedera:testnet:' + accountId,
-          query: queryToBase64String(query),
+          query: queryToBase64String(query as Query<AccountInfo>),
         }
         const { response } = await walletProvider.hedera_signAndExecuteQuery(queryParams)
         const accountInfo = AccountInfo.fromBytes(Buffer.from(response, 'base64'))

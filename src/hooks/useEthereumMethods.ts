@@ -136,28 +136,50 @@ export const useEthereumMethods = ({
     walletProvider && address && browserProvider
       ? new JsonRpcSigner(browserProvider, address)
       : undefined
-  const rpcProvider =
-    walletProvider && chainId
-      ? (
-          walletProvider.rpcProviders as unknown as Record<
-            string,
-            Record<
-              string,
-              Record<
-                number,
-                { request: (params: { method: string; params: unknown[] }) => Promise<unknown> }
-              >
-            >
-          >
-        )?.eip155?.httpProviders?.[chainId]
-      : jsonRpcProvider
-        ? {
-            request: ({ method, params }: { method: string; params: unknown[] }) =>
-              jsonRpcProvider.send(method, params as never[]),
-          }
-        : undefined
+  // Get the RPC provider - either from wallet provider's HTTP providers or fallback to jsonRpcProvider
+  let rpcProvider = null
+
+  if (walletProvider && chainId) {
+    // Try to get the HTTP provider from the wallet provider
+    const providers = walletProvider.rpcProviders as unknown as {
+      eip155?: {
+        httpProviders?: Record<
+          number,
+          { request: (args: { method: string; params: unknown[] }) => Promise<unknown> }
+        >
+      }
+    }
+
+    if (providers?.eip155?.httpProviders?.[chainId]) {
+      rpcProvider = providers.eip155.httpProviders[chainId]
+    } else if (walletProvider.eip155Provider) {
+      // Fallback to the eip155Provider directly
+      rpcProvider = {
+        request: (args: { method: string; params: unknown[] }) =>
+          walletProvider.eip155Provider!.request({
+            request: args,
+            chainId: `eip155:${chainId}`,
+            topic: walletProvider.session?.topic || '',
+          }),
+      }
+    }
+  }
+
+  // Fallback to jsonRpcProvider if no wallet provider
+  if (!rpcProvider && jsonRpcProvider) {
+    rpcProvider = {
+      request: ({ method, params }: { method: string; params: unknown[] }) =>
+        jsonRpcProvider.send(method, params as never[]),
+    }
+  }
 
   const execute = async (methodName: string, params: Record<string, string>) => {
+    if (!rpcProvider) {
+      throw new Error(
+        `No RPC provider available for chain ${chainId}. Please ensure you are connected with the correct namespace (eip155) and chain.`,
+      )
+    }
+
     switch (methodName) {
       case 'eth_getBalance': {
         const balance = await rpcProvider.request({
@@ -225,20 +247,27 @@ export const useEthereumMethods = ({
         sendHash(txHash as string)
         return txHash
       }
-      case 'eth_signMessage': {
-        if (!signer) throw new Error('Wallet not connected')
-        const p = params as unknown as EthSignMessageParams
-        const signature = await signer.signMessage(p.message)
-        sendSignMsg(signature)
-        return signature
-      }
       case 'personal_sign': {
-        if (!signer) throw new Error('Wallet not connected')
+        if (!walletProvider) throw new Error('Wallet not connected')
+        if (!address) throw new Error('No address available')
+        if (!chainId) throw new Error('No chainId available')
+
         const p = params as unknown as EthSignMessageParams
-        // personal_sign expects the message as the first param and address as second
-        // but we handle it the same way as eth_signMessage
-        const signature = await signer.signMessage(p.message)
-        sendSignMsg(signature)
+        // personal_sign expects [message, address] as params
+        // The message needs to be hex-encoded
+        const messageHex = p.message.startsWith('0x')
+          ? p.message
+          : hexlify(new TextEncoder().encode(p.message))
+
+        // Make direct RPC call through the wallet provider with chainId
+        const signature = await walletProvider.request(
+          {
+            method: 'personal_sign',
+            params: [messageHex, address],
+          },
+          `eip155:${chainId}`, // Pass the chainId in CAIP format
+        )
+        sendSignMsg(signature as string)
         return signature
       }
       case 'eth_sign': {
@@ -382,7 +411,10 @@ export const useEthereumMethods = ({
           fromBlock: p.fromBlock,
           toBlock: p.toBlock,
         }
-        return rpcProvider.request({ method: 'eth_getLogs', params: [filter] })
+        return rpcProvider.request({
+          method: 'eth_getLogs',
+          params: [filter],
+        })
       }
       case 'eth_mining': {
         return rpcProvider.request({ method: 'eth_mining', params: [] })
