@@ -11,7 +11,7 @@
     "test": "npm run build && vitest run --coverage"
   },
   "dependencies": {
-    "@hashgraph/hedera-wallet-connect": "file:../../hedera-wallet-connect",
+    "@hashgraph/hedera-wallet-connect": "^2.0.4-canary.a83fb1a.0",
     "@hashgraph/sdk": "^2.72.0",
     "@reown/appkit": "^1.7.16",
     "@reown/appkit-adapter-ethers": "^1.7.16",

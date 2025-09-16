@@ -602,7 +602,17 @@ export function MethodExecutor({
   const [isExecuting, setIsExecuting] = useState(false)
   const [result, setResult] = useState<{ success: boolean; data: unknown } | null>(null)
 
-  const methods = namespace === 'hedera' ? hederaMethods : eip155Methods
+  // Filter out hidden methods for hedera namespace
+  const hiddenHederaMethods = [
+    HederaJsonRpcMethod.GetNodeAddresses,
+    HederaJsonRpcMethod.ExecuteTransaction,
+    HederaJsonRpcMethod.SignAndExecuteQuery,
+  ]
+
+  const methods =
+    namespace === 'hedera'
+      ? hederaMethods.filter((m) => !hiddenHederaMethods.includes(m.name))
+      : eip155Methods
   const currentMethod = methods.find((m) => m.name === selectedMethod)
 
   const handleMethodChange = (methodName: string) => {

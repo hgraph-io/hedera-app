@@ -402,60 +402,65 @@ function V2AppContent({
       )}
 
       {/* Results Display */}
-      {isConnected && (transactionHash || transactionId || signedMsg || (nodes && nodes.length > 0)) && (
-        <div
-          style={{
-            padding: '20px',
-            backgroundColor: '#f0f8ff',
-            borderRadius: '8px',
-            marginBottom: '20px',
-          }}
-        >
-          <h3>Recent Results</h3>
-          {transactionHash && (
-            <div style={{ marginBottom: '10px' }}>
-              <strong>ETH Transaction Hash:</strong>
-              <pre style={{ fontSize: '12px', wordBreak: 'break-all' }}>{transactionHash}</pre>
-            </div>
-          )}
-          {transactionId && (
-            <div style={{ marginBottom: '10px' }}>
-              <strong>Hedera Transaction ID:</strong>
-              <pre style={{ fontSize: '12px', wordBreak: 'break-all' }}>{transactionId}</pre>
-            </div>
-          )}
-          {signedMsg && (
-            <div style={{ marginBottom: '10px' }}>
-              <strong>Signed Message:</strong>
-              <pre style={{ fontSize: '12px', wordBreak: 'break-all' }}>{signedMsg}</pre>
-            </div>
-          )}
-          {nodes && nodes.length > 0 && (
-            <div style={{ marginBottom: '10px' }}>
-              <strong>Node Addresses:</strong>
-              <pre style={{ fontSize: '12px', wordBreak: 'break-all' }}>{nodes.join(', ')}</pre>
-            </div>
-          )}
-          <button
-            onClick={() => {
-              setTransactionHash('')
-              setTransactionId('')
-              setSignedMsg('')
-              setNodes([])
-            }}
+      {isConnected &&
+        (transactionHash || transactionId || signedMsg || (nodes && nodes.length > 0)) && (
+          <div
             style={{
-              padding: '8px 16px',
-              backgroundColor: '#dc3545',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
+              padding: '20px',
+              backgroundColor: '#f0f8ff',
+              borderRadius: '8px',
+              marginBottom: '20px',
             }}
           >
-            Clear Results
-          </button>
-        </div>
-      )}
+            <h3>Recent Results</h3>
+            {transactionHash && (
+              <div style={{ marginBottom: '10px' }}>
+                <strong>ETH Transaction Hash:</strong>
+                <pre style={{ fontSize: '12px', wordBreak: 'break-all' }}>
+                  {transactionHash}
+                </pre>
+              </div>
+            )}
+            {transactionId && (
+              <div style={{ marginBottom: '10px' }}>
+                <strong>Hedera Transaction ID:</strong>
+                <pre style={{ fontSize: '12px', wordBreak: 'break-all' }}>{transactionId}</pre>
+              </div>
+            )}
+            {signedMsg && (
+              <div style={{ marginBottom: '10px' }}>
+                <strong>Signed Message:</strong>
+                <pre style={{ fontSize: '12px', wordBreak: 'break-all' }}>{signedMsg}</pre>
+              </div>
+            )}
+            {nodes && nodes.length > 0 && (
+              <div style={{ marginBottom: '10px' }}>
+                <strong>Node Addresses:</strong>
+                <pre style={{ fontSize: '12px', wordBreak: 'break-all' }}>
+                  {nodes.join(', ')}
+                </pre>
+              </div>
+            )}
+            <button
+              onClick={() => {
+                setTransactionHash('')
+                setTransactionId('')
+                setSignedMsg('')
+                setNodes([])
+              }}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: '#dc3545',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              Clear Results
+            </button>
+          </div>
+        )}
 
       <div className="advice">
         <div style={{ fontSize: '12px', color: '#666' }}>

@@ -1,6 +1,16 @@
 import { useState, useCallback } from 'react'
-import { AccountId, TransferTransaction } from '@hashgraph/sdk'
-import { DAppSigner } from '@hashgraph/hedera-wallet-connect'
+import {
+  AccountId,
+  TransferTransaction,
+  Hbar,
+  Transaction,
+  TransactionId,
+} from '@hashgraph/sdk'
+import {
+  DAppSigner,
+  DAppConnector,
+  transactionToBase64String,
+} from '@hashgraph/hedera-wallet-connect'
 import { decodeSignature, formatSignatureDisplay } from '../utils/signatureVerification'
 
 interface UseV1MethodsState {
@@ -11,9 +21,12 @@ interface UseV1MethodsState {
 
 export function useV1Methods(
   signers: DAppSigner[],
+  connector: DAppConnector | null,
   setTransactionId?: (id: string) => void,
   setSignedMsg?: (msg: string) => void,
   setNodes?: (nodes: string[]) => void,
+  signedTransaction?: Transaction | null,
+  setSignedTransaction?: (tx: Transaction | null) => void,
 ) {
   const [state, setState] = useState<UseV1MethodsState>({
     isExecuting: false,
@@ -139,6 +152,73 @@ export function useV1Methods(
             return result
           }
 
+          case 'hedera_signTransaction': {
+            if (!params?.recipientId || !params?.amount || !params?.maxFee) {
+              throw new Error('Missing required parameters: recipientId, amount, maxFee')
+            }
+
+            const accountId = signer.getAccountId()
+            if (!accountId) throw new Error('Account ID not available')
+
+            const hbarAmount = new Hbar(Number(params.amount))
+            const recipientAccountId = AccountId.fromString(params.recipientId)
+            const transaction = new TransferTransaction()
+              .setTransactionId(TransactionId.generate(accountId.toString()))
+              .addHbarTransfer(accountId.toString(), hbarAmount.negated())
+              .addHbarTransfer(recipientAccountId, hbarAmount)
+              .setMaxTransactionFee(new Hbar(Number(params.maxFee)))
+
+            const signedTx = await signer.signTransaction(transaction as Transaction)
+            console.log('Signed transaction type:', typeof signedTx, signedTx)
+            console.log('Has executeWithSigner?', typeof (signedTx as any)?.executeWithSigner)
+            if (setSignedTransaction) {
+              setSignedTransaction(signedTx)
+            }
+
+            result = {
+              success: true,
+              message:
+                'Transaction signed successfully. Use hedera_executeTransaction to submit.',
+              details: {
+                from: accountId.toString(),
+                to: params.recipientId,
+                amount: `${params.amount} HBAR`,
+                maxFee: `${params.maxFee} HBAR`,
+              },
+            }
+            return result
+          }
+
+          case 'hedera_executeTransaction': {
+            console.log(
+              'Attempting to execute transaction, signedTransaction:',
+              signedTransaction,
+            )
+            if (!signedTransaction) {
+              throw new Error(
+                'No signed transaction available. Use hedera_signTransaction first.',
+              )
+            }
+
+            const txResponse = await (signedTransaction as any).executeWithSigner(signer)
+            const receipt = await txResponse.getReceiptWithSigner(signer)
+
+            if (setTransactionId && txResponse.transactionId) {
+              setTransactionId(txResponse.transactionId.toString())
+            }
+
+            // Clear the signed transaction after execution
+            if (setSignedTransaction) {
+              setSignedTransaction(null)
+            }
+
+            result = {
+              transactionId: txResponse.transactionId?.toString(),
+              status: receipt.status.toString(),
+            }
+            return result
+          }
+
           case 'hedera_getNodeAddresses': {
             // For V1, we'll return some default testnet nodes
             const nodeAddresses = [
@@ -152,6 +232,48 @@ export function useV1Methods(
             return nodeAddresses
           }
 
+          case 'hedera_signAndExecuteTransaction': {
+            if (!params?.recipientId || !params?.amount) {
+              throw new Error('Missing required parameters: recipientId, amount')
+            }
+
+            const accountId = signer.getAccountId()
+            if (!accountId) throw new Error('Account ID not available')
+
+            const hbarAmount = new Hbar(Number(params.amount))
+            const recipientAccountId = AccountId.fromString(params.recipientId)
+            const transaction = new TransferTransaction()
+              .setTransactionId(TransactionId.generate(accountId.toString()))
+              .addHbarTransfer(accountId.toString(), hbarAmount.negated())
+              .addHbarTransfer(recipientAccountId, hbarAmount)
+              .setMaxTransactionFee(new Hbar(1)) // Default max fee of 1 HBAR
+
+            // Use the wallet's native signAndExecuteTransaction method
+            // This will make a single request to the wallet
+            const transactionList = transactionToBase64String(transaction as Transaction)
+
+            // Call the wallet directly through the connector
+            if (!connector) {
+              throw new Error('Connector not available')
+            }
+
+            // Pass the correct params format expected by DAppConnector
+            const walletResponse = await connector.signAndExecuteTransaction({
+              signerAccountId: accountId.toString(),
+              transactionList: transactionList,
+            })
+
+            if (setTransactionId && walletResponse?.transactionId) {
+              setTransactionId(walletResponse.transactionId)
+            }
+
+            result = {
+              transactionId: walletResponse?.transactionId,
+              status: 'SUCCESS',
+            }
+            return result
+          }
+
           default:
             throw new Error(`Unsupported method: ${method}`)
         }
@@ -162,7 +284,15 @@ export function useV1Methods(
         return null
       }
     },
-    [signers, setTransactionId, setSignedMsg, setNodes],
+    [
+      signers,
+      connector,
+      setTransactionId,
+      setSignedMsg,
+      setNodes,
+      signedTransaction,
+      setSignedTransaction,
+    ],
   )
 
   return {

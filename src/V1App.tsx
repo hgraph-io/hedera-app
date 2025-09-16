@@ -5,6 +5,7 @@ import { ConnectionWrapper } from './components/ConnectionWrapper'
 import { V1ConnectionModal } from './components/V1ConnectionModal'
 import { ConfigurationModal } from './components/ConfigurationModal'
 import { MethodExecutor } from './components/MethodExecutor'
+import { SignedTransactionModal } from './components/SignedTransactionModal'
 import { useDAppConnectorV1 } from './hooks/useDAppConnectorV1'
 import { useV1Methods } from './hooks/useV1Methods'
 import { DEFAULT_RPC_URL } from './config'
@@ -21,10 +22,29 @@ export function V1App() {
   const [nodes, setNodes] = useState<string[]>([])
   const [showV1Modal, setShowV1Modal] = useState(false)
   const [showConfigModal, setShowConfigModal] = useState(false)
+  const [showSignedTxModal, setShowSignedTxModal] = useState(false)
+  const [signedTransaction, setSignedTransaction] = useState<any>(null)
+  const [transactionDetails, setTransactionDetails] = useState<
+    | {
+        from?: string
+        to?: string
+        amount?: string
+        maxFee?: string
+      }
+    | undefined
+  >()
 
   // V1 connection state
   const v1Connection = useDAppConnectorV1()
-  const v1Methods = useV1Methods(v1Connection.signers, setTransactionId, setSignedMsg, setNodes)
+  const v1Methods = useV1Methods(
+    v1Connection.signers,
+    v1Connection.connector,
+    setTransactionId,
+    setSignedMsg,
+    setNodes,
+    signedTransaction,
+    setSignedTransaction,
+  )
 
   // Get configuration from localStorage
   const projectId = localStorage.getItem('reownProjectId')
@@ -51,6 +71,38 @@ export function V1App() {
 
   // Setup V1 method executor
   const { executeV1Method } = v1Methods
+
+  // Enhanced execute method that captures transaction details
+  const handleExecuteMethod = async (method: string, params: Record<string, string>) => {
+    try {
+      const result = await executeV1Method(method, params)
+
+      // If it's a sign transaction, store the details
+      if (
+        method === 'hedera_signTransaction' &&
+        result &&
+        typeof result === 'object' &&
+        'details' in result
+      ) {
+        setTransactionDetails(result.details as typeof transactionDetails)
+      }
+
+      // Only clear transaction details AFTER a successful execution
+      if (method === 'hedera_executeTransaction' && result) {
+        // Clear after successful execution
+        setTimeout(() => {
+          setTransactionDetails(undefined)
+          setSignedTransaction(null)
+        }, 100)
+      }
+
+      return result
+    } catch (error) {
+      // Don't clear on error
+      console.error(`Error executing ${method}:`, error)
+      throw error
+    }
+  }
 
   // Enhanced disconnect handler
   const handleDisconnect = async () => {
@@ -242,7 +294,7 @@ export function V1App() {
             <MethodExecutor
               namespace="hedera"
               isConnected={v1Connection.isConnected}
-              onExecute={executeV1Method}
+              onExecute={handleExecuteMethod}
               address={v1Connection.accountId || ''}
             />
           </div>
@@ -273,7 +325,11 @@ export function V1App() {
 
         {/* Results Display */}
         {v1Connection.isConnected &&
-          (transactionHash || transactionId || signedMsg || nodes.length > 0) && (
+          (transactionHash ||
+            transactionId ||
+            signedMsg ||
+            nodes.length > 0 ||
+            signedTransaction) && (
             <div
               style={{
                 padding: '20px',
@@ -313,12 +369,45 @@ export function V1App() {
                   </pre>
                 </div>
               )}
+              {signedTransaction && (
+                <div style={{ marginBottom: '10px' }}>
+                  <strong>Signed Transaction (Ready to Execute):</strong>
+                  <div style={{ marginTop: '8px' }}>
+                    <pre
+                      style={{
+                        fontSize: '12px',
+                        wordBreak: 'break-all',
+                        color: '#28a745',
+                        marginBottom: '10px',
+                      }}
+                    >
+                      Transaction signed and ready. Use hedera_executeTransaction to submit.
+                    </pre>
+                    <button
+                      onClick={() => setShowSignedTxModal(true)}
+                      style={{
+                        padding: '6px 12px',
+                        backgroundColor: '#17a2b8',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                      }}
+                    >
+                      View Transaction Details
+                    </button>
+                  </div>
+                </div>
+              )}
               <button
                 onClick={() => {
                   setTransactionHash('')
                   setTransactionId('')
                   setSignedMsg('')
                   setNodes([])
+                  setSignedTransaction(null)
+                  setTransactionDetails(undefined)
                 }}
                 style={{
                   padding: '8px 16px',
@@ -362,6 +451,14 @@ export function V1App() {
           }}
           currentProjectId={projectId || ''}
           currentRpcUrl={rpcUrl}
+        />
+
+        {/* Signed Transaction Modal */}
+        <SignedTransactionModal
+          isOpen={showSignedTxModal}
+          onClose={() => setShowSignedTxModal(false)}
+          signedTransaction={signedTransaction}
+          transactionDetails={transactionDetails}
         />
       </div>
     </ConnectionWrapper>

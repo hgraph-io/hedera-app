@@ -45,9 +45,7 @@ export const InfoList = ({
   const { themeMode, themeVariables } =
     connectionMode === 'v2' ? theme : { themeMode: undefined, themeVariables: undefined }
   const { activeChain, selectedNetworkId } =
-    connectionMode === 'v2'
-      ? state
-      : { activeChain: undefined, selectedNetworkId: undefined }
+    connectionMode === 'v2' ? state : { activeChain: undefined, selectedNetworkId: undefined }
   const { chainId } = connectionMode === 'v2' ? network : { chainId: undefined }
   const { address, caipAddress, isConnected, status } =
     connectionMode === 'v2'
