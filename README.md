@@ -82,7 +82,7 @@ native integration.
 To generate a coverage report, run:
 
 ```sh
-npm run coverage
+npm run test
 ```
 
 The report will be saved in the `coverage` directory and a summary will be printed in the
