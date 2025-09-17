@@ -1,5 +1,6 @@
 services:
   hedera-app:
+    container_name: hedera-app
     build:
       context: .
       dockerfile: Dockerfile
