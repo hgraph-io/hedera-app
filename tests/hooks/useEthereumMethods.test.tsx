@@ -329,12 +329,10 @@ describe('useEthereumMethods', () => {
     })
   })
 
-  it('signs messages with eth_sign', async () => {
-    await act(async () => {
-      const sig = await execute('eth_sign', { message: 'test message' })
-      expect(sig).toBe('signature')
-      expect(sendSignMsg).toHaveBeenCalledWith('signature')
-    })
+  it('throws error for unsupported eth_sign method', async () => {
+    await expect(execute('eth_sign', { message: 'test message' })).rejects.toThrow(
+      'eth_sign is not supported. This legacy method is deprecated due to security concerns. Please use personal_sign or eth_signTypedData_v4 instead.',
+    )
   })
 
   it('signs typed data v3', async () => {
@@ -368,6 +366,13 @@ describe('useEthereumMethods', () => {
       })
       expect(sig).toBe('typedSignature')
       expect(sendSignMsg).toHaveBeenCalledWith('typedSignature')
+    })
+  })
+
+  it('returns empty array for eth_accounts', async () => {
+    await act(async () => {
+      const accounts = await execute('eth_accounts', {})
+      expect(accounts).toEqual([])
     })
   })
 
