@@ -93,7 +93,6 @@ export const useHederaMethods = (
           .addHbarTransfer(accountId, hbarAmount.negated())
           .addHbarTransfer(p.recipientId, hbarAmount)
           .setMaxTransactionFee(new Hbar(Number(p.maxFee)))
-          .freezeWith(null)
         const transactionSigned = await walletProvider.hedera_signTransaction({
           signerAccountId: 'hedera:testnet:' + accountId,
           transactionBody: transaction as HederaTransaction,
