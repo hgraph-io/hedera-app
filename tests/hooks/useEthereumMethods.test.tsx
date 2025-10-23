@@ -330,7 +330,11 @@ describe('useEthereumMethods', () => {
   })
 
   it('throws error for unsupported eth_sign method', async () => {
-    await expect(execute('eth_sign', { message: 'test message' })).rejects.toThrow(
+    await expect(
+      act(async () => {
+        await execute('eth_sign', { message: 'test message' })
+      }),
+    ).rejects.toThrow(
       'eth_sign is not supported. This legacy method is deprecated due to security concerns. Please use personal_sign or eth_signTypedData_v4 instead.',
     )
   })
