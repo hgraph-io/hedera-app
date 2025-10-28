@@ -271,15 +271,13 @@ export const useEthereumMethods = ({
         return signature
       }
       case 'eth_sign': {
-        if (!signer) throw new Error('Wallet not connected')
-        const p = params as unknown as EthSignMessageParams
-        // eth_sign is similar to personal_sign but less secure
-        // Most wallets will show a warning for eth_sign
-        const signature = await (
-          signer as JsonRpcSigner & { _signMessage: (message: string) => Promise<string> }
-        )._signMessage(p.message)
-        sendSignMsg(signature)
-        return signature
+        // eth_sign is a legacy method that is not supported by Hedera's JSON-RPC relay
+        // This method has been deprecated due to security concerns (allows signing arbitrary data)
+        // Use personal_sign or eth_signTypedData instead for better security
+        throw new Error(
+          'eth_sign is not supported. This legacy method is deprecated due to security concerns. ' +
+          'Please use personal_sign or eth_signTypedData_v4 instead.',
+        )
       }
       case 'eth_call': {
         const p = params as unknown as EthCallParams
@@ -517,6 +515,11 @@ export const useEthereumMethods = ({
         )
         sendSignMsg(signature)
         return signature
+      }
+      case 'eth_accounts': {
+        // Return empty array per JSON-RPC spec
+        // Account information is managed through WalletConnect session
+        return []
       }
       default:
         throw new Error(`Unsupported Ethereum method: ${methodName}`)
