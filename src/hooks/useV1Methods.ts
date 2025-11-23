@@ -5,6 +5,7 @@ import {
   Hbar,
   Transaction,
   TransactionId,
+  Client,
 } from '@hashgraph/sdk'
 import {
   DAppSigner,
@@ -19,6 +20,20 @@ interface UseV1MethodsState {
   result: unknown
 }
 
+export interface ProgressUpdate {
+  phase: 'signing' | 'executing'
+  nodeIndex?: number
+  totalNodes?: number
+  status?: 'pending' | 'success' | 'failed'
+  duration?: number
+  error?: {
+    nodeIndex: number
+    errorType: string
+    errorMessage: string
+    stackTrace?: string
+  }
+}
+
 export function useV1Methods(
   signers: DAppSigner[],
   connector: DAppConnector | null,
@@ -27,6 +42,7 @@ export function useV1Methods(
   setNodes?: (nodes: string[]) => void,
   signedTransaction?: Transaction | null,
   setSignedTransaction?: (tx: Transaction | null) => void,
+  onProgress?: (update: ProgressUpdate) => void,
 ) {
   const [state, setState] = useState<UseV1MethodsState>({
     isExecuting: false,
@@ -43,7 +59,8 @@ export function useV1Methods(
         recipientId?: string
         message?: string
         maxFee?: string
-      },
+        nodeCount?: string
+      }
     ) => {
       if (!signers || signers.length === 0) {
         setState((prev) => ({
@@ -290,6 +307,151 @@ export function useV1Methods(
             return result
           }
 
+          case 'hedera_signTransactions': {            
+            if (!params?.to || !params?.amount) {
+              throw new Error('Missing required parameters: to and amount')
+            }
+
+            const accountId = signer.getAccountId()
+            if (!accountId) throw new Error('Account ID not available')
+
+            const nodeCount = Number(params.nodeCount) || 5
+            
+            // Create transaction WITHOUT node IDs (required for HIP-1190)
+            const transaction = new TransferTransaction()
+              .addHbarTransfer(accountId.toString(), -Number(params.amount))
+              .addHbarTransfer(AccountId.fromString(params.to), Number(params.amount))
+              .setMaxTransactionFee(new Hbar(Number(params.maxFee) || 2))
+
+            // Track signing time
+            const signStart = performance.now()
+            
+            onProgress?.({ 
+              phase: 'signing', 
+              totalNodes: nodeCount 
+            })
+
+            // Sign for multiple nodes (HIP-1190)
+            const signedTransactions = await signer.signTransactions(
+              transaction,
+              nodeCount
+            )
+
+            const signingDuration = performance.now() - signStart
+            
+            onProgress?.({ 
+              phase: 'signing', 
+              duration: signingDuration,
+              totalNodes: nodeCount 
+            })
+
+            console.log(`Signed transaction for ${signedTransactions.length} nodes in ${signingDuration.toFixed(2)}ms`)
+
+            // Try each node until one succeeds
+            const client = Client.forTestnet()
+            const attempts: Array<{
+              nodeIndex: number
+              status: 'success' | 'failed'
+              duration: number
+              error?: {
+                errorType: string
+                errorMessage: string
+                stackTrace?: string
+              }
+            }> = []
+
+            for (let i = 0; i < signedTransactions.length; i++) {
+              const execStart = performance.now()
+              
+              onProgress?.({
+                phase: 'executing',
+                nodeIndex: i,
+                totalNodes: signedTransactions.length,
+                status: 'pending'
+              })
+
+              try {
+                console.log(`Attempting node ${i + 1}/${signedTransactions.length}...`)
+                
+                const response = await signedTransactions[i].execute(client)
+                const execDuration = performance.now() - execStart
+                
+                console.log(`✅ Success on node ${i + 1} in ${execDuration.toFixed(2)}ms`)
+                
+                attempts.push({
+                  nodeIndex: i,
+                  status: 'success',
+                  duration: execDuration
+                })
+
+                onProgress?.({
+                  phase: 'executing',
+                  nodeIndex: i,
+                  totalNodes: signedTransactions.length,
+                  status: 'success',
+                  duration: execDuration
+                })
+
+                if (setTransactionId) {
+                  setTransactionId(response.transactionId.toString())
+                }
+
+                result = {
+                  success: true,
+                  transactionId: response.transactionId.toString(),
+                  nodeIndexUsed: i,
+                  totalAttempts: i + 1,
+                  totalNodes: signedTransactions.length,
+                  signingDuration,
+                  attempts
+                }
+                
+                return result
+                
+              } catch (error: any) {
+                const execDuration = performance.now() - execStart
+                
+                console.error(`❌ Node ${i + 1} failed in ${execDuration.toFixed(2)}ms:`, error.message)
+                
+                const errorDetails = {
+                  errorType: error.constructor?.name || 'Error',
+                  errorMessage: error.message || 'Unknown error',
+                  stackTrace: error.stack
+                }
+
+                attempts.push({
+                  nodeIndex: i,
+                  status: 'failed',
+                  duration: execDuration,
+                  error: errorDetails
+                })
+
+                onProgress?.({
+                  phase: 'executing',
+                  nodeIndex: i,
+                  totalNodes: signedTransactions.length,
+                  status: 'failed',
+                  duration: execDuration,
+                  error: {
+                    nodeIndex: i,
+                    ...errorDetails
+                  }
+                })
+
+                // If this was the last node, throw comprehensive error
+                if (i === signedTransactions.length - 1) {
+                  throw new Error(
+                    `Transaction failed on all ${signedTransactions.length} nodes. ` +
+                    `Attempts: ${JSON.stringify(attempts, null, 2)}`
+                  )
+                }
+              }
+            }
+
+            // Should never reach here, but TypeScript needs a return
+            throw new Error('Unexpected error: no nodes were attempted')
+          }
+
           default:
             throw new Error(`Unsupported method: ${method}`)
         }
@@ -308,6 +470,7 @@ export function useV1Methods(
       setNodes,
       signedTransaction,
       setSignedTransaction,
+      onProgress,
     ],
   )
 
