@@ -70,7 +70,6 @@ export function V2App() {
     const providerOpts = {
       projectId,
       metadata,
-      logger: 'error' as const,
       optionalNamespaces: {
         // hashpack only uses the first namespace in the list
         eip155: {
@@ -110,8 +109,6 @@ export function V2App() {
 
     createAppKit({
       adapters: [nativeHederaAdapter, eip155HederaAdapter],
-      logger: 'error' as const,
-      // @ts-expect-error universalProvider type compatibility
       universalProvider,
       projectId,
       metadata,
@@ -207,6 +204,7 @@ function V2AppContent({
     setTransactionId,
     setSignedMsg,
     setNodes,
+    undefined, // onProgress - handled by MethodExecutor
   )
 
   // Setup Ethereum methods
