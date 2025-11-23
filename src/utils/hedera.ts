@@ -1,4 +1,7 @@
 export function toEvmAddress(accountId: string): string {
+  if (!accountId) {
+    return ''
+  }
   if (accountId.startsWith('0x')) {
     return accountId.toLowerCase()
   }
