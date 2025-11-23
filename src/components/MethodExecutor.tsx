@@ -1,11 +1,23 @@
 import { useState } from 'react'
 import { HederaJsonRpcMethod } from '@hashgraph/hedera-wallet-connect'
+import { TransactionProgressModal } from './TransactionProgressModal'
 
 interface MethodExecutorProps {
   namespace: 'hedera' | 'eip155'
   isConnected: boolean
   onExecute: (method: string, params: Record<string, string>) => Promise<unknown>
   address?: string
+}
+
+interface NodeAttempt {
+  nodeIndex: number
+  status: 'pending' | 'success' | 'failed'
+  duration?: number
+  error?: {
+    errorType: string
+    errorMessage: string
+    stackTrace?: string
+  }
 }
 
 interface MethodConfig {
@@ -109,6 +121,50 @@ const hederaMethods: MethodConfig[] = [
     displayName: 'Sign & Execute Query (hedera_signAndExecuteQuery)',
     description: 'Execute a query (e.g., account info)',
     params: [],
+  },
+  {
+    name: HederaJsonRpcMethod.SignTransactions,
+    displayName: 'Sign Transactions Multi-Node (hedera_signTransactions - HIP-1190)',
+    description: 'Sign transaction for multiple nodes with automatic failover and performance tracking',
+    params: [
+      {
+        name: 'to',
+        label: 'Recipient Account ID',
+        type: 'text',
+        placeholder: '0.0.12345',
+        required: true,
+      },
+      {
+        name: 'amount',
+        label: 'Amount (HBAR)',
+        type: 'number',
+        placeholder: '1',
+        required: true,
+        defaultValue: '1',
+      },
+      {
+        name: 'maxFee',
+        label: 'Max Fee (HBAR)',
+        type: 'number',
+        placeholder: '1',
+        required: true,
+        defaultValue: '1',
+      },
+      {
+        name: 'nodeCount',
+        label: 'Number of Nodes',
+        type: 'select',
+        required: true,
+        defaultValue: '5',
+        options: [
+          { value: '1', label: '1 node (testing)' },
+          { value: '3', label: '3 nodes' },
+          { value: '5', label: '5 nodes (recommended)' },
+          { value: '7', label: '7 nodes' },
+          { value: '10', label: '10 nodes (max reliability)' },
+        ],
+      },
+    ],
   },
 ]
 
@@ -601,6 +657,25 @@ export function MethodExecutor({
   const [formValues, setFormValues] = useState<Record<string, string>>({})
   const [isExecuting, setIsExecuting] = useState(false)
   const [result, setResult] = useState<{ success: boolean; data: unknown } | null>(null)
+  
+  // Progress modal state
+  const [progressState, setProgressState] = useState<{
+    isOpen: boolean
+    phase: 'signing' | 'executing' | 'complete' | 'failed'
+    nodeIndex?: number
+    totalNodes: number
+    signingDuration?: number
+    attempts: NodeAttempt[]
+    transactionId?: string
+  }>({
+    isOpen: false,
+    phase: 'signing',
+    totalNodes: 0,
+    attempts: [],
+  })
+  
+  // Store last params for retry
+  const [lastTransactionParams, setLastTransactionParams] = useState<Record<string, string> | null>(null)
 
   // Filter out hidden methods for hedera namespace
   const hiddenHederaMethods = [
@@ -643,23 +718,104 @@ export function MethodExecutor({
   }
 
   const handleInputChange = (name: string, value: string) => {
-    setFormValues((prev) => ({ ...prev, [name]: value }))
+    console.log('[MethodExecutor.handleInputChange] Field:', name, 'Value:', value)
+    setFormValues((prev) => {
+      const updated = { ...prev, [name]: value }
+      console.log('[MethodExecutor.handleInputChange] Updated formValues:', updated)
+      return updated
+    })
+  }
+
+  // TODO: Wire up progress updates from hooks to modal
+  // Currently progress callbacks in hooks are not connected to MethodExecutor's modal state
+  // This requires passing a callback from MethodExecutor -> App -> Hooks which needs refactoring
+
+  // Retry function for HIP-1190
+  const handleRetry = async () => {
+    if (!lastTransactionParams) return
+    
+    // Reset progress state
+    setProgressState({
+      isOpen: true,
+      phase: 'signing',
+      totalNodes: Number(lastTransactionParams.nodeCount) || 5,
+      attempts: [],
+    })
+    
+    // Re-execute with same params
+    await executeWithProgress(HederaJsonRpcMethod.SignTransactions, lastTransactionParams)
+  }
+
+  // Execute with progress tracking
+  const executeWithProgress = async (method: string, params: Record<string, string>) => {
+    console.log('[MethodExecutor.executeWithProgress] Method:', method, 'Params:', params)
+    setIsExecuting(true)
+    setResult(null)
+
+    try {
+      console.log('[MethodExecutor.executeWithProgress] Calling onExecute...')
+      const data = await onExecute(method, params)
+      console.log('[MethodExecutor.executeWithProgress] Success, data:', data)
+      
+      // Update progress state to complete
+      setProgressState(prev => ({
+        ...prev,
+        phase: 'complete',
+        transactionId: typeof data === 'object' && data !== null && 'transactionId' in data 
+          ? String(data.transactionId) 
+          : undefined,
+      }))
+      
+      setResult({ success: true, data })
+    } catch (error) {
+      console.error('[MethodExecutor.executeWithProgress] Error caught:', error)
+      // Update progress state to failed
+      setProgressState(prev => ({
+        ...prev,
+        phase: 'failed',
+      }))
+      
+      setResult({
+        success: false,
+        data: error instanceof Error ? error.message : 'Unknown error occurred',
+      })
+    } finally {
+      console.log('[MethodExecutor.executeWithProgress] Finally block')
+      setIsExecuting(false)
+    }
   }
 
   const handleExecute = async () => {
     if (!currentMethod) return
 
+    const params = { ...formValues }
+    
+    console.log('[MethodExecutor.handleExecute] Method:', currentMethod.name, 'Params:', params)
+
+    // Auto-fill address if not provided for certain methods
+    if (currentMethod.name === 'eth_getBalance' && !params.address && address) {
+      params.address = address
+    }
+
+    // Handle HIP-1190 with progress modal
+    if (currentMethod.name === HederaJsonRpcMethod.SignTransactions) {
+      console.log('[MethodExecutor.handleExecute] HIP-1190 detected')
+      setLastTransactionParams(params)
+      setProgressState({
+        isOpen: true,
+        phase: 'signing',
+        totalNodes: Number(params.nodeCount) || 5,
+        attempts: [],
+      })
+      await executeWithProgress(currentMethod.name, params)
+      return
+    }
+
+    // Regular execution for other methods
     setIsExecuting(true)
     setResult(null)
 
     try {
-      const params = { ...formValues }
-
-      // Auto-fill address if not provided for certain methods
-      if (currentMethod.name === 'eth_getBalance' && !params.address && address) {
-        params.address = address
-      }
-
       const data = await onExecute(currentMethod.name, params)
       setResult({ success: true, data })
     } catch (error) {
@@ -897,23 +1053,131 @@ export function MethodExecutor({
               <strong style={{ color: result.success ? '#2e7d32' : '#c62828' }}>
                 {result.success ? 'Success:' : 'Error:'}
               </strong>
-              <pre
-                style={{
-                  margin: '8px 0 0 0',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-all',
-                  fontSize: '12px',
-                  fontFamily: 'monospace',
-                }}
-              >
-                {typeof result.data === 'object'
-                  ? JSON.stringify(result.data, null, 2)
-                  : String(result.data)}
-              </pre>
+              
+              {/* Special formatting for HIP-1190 results */}
+              {result.success && 
+               currentMethod.name === HederaJsonRpcMethod.SignTransactions && 
+               typeof result.data === 'object' && 
+               result.data !== null &&
+               'attempts' in result.data ? (
+                <div style={{ marginTop: '12px' }}>
+                  <div style={{ 
+                    padding: '8px',
+                    backgroundColor: '#fff',
+                    borderRadius: '4px',
+                    marginBottom: '8px',
+                    border: '1px solid #ddd'
+                  }}>
+                    <strong>📊 Multi-Node Signing Summary:</strong>
+                    <div style={{ marginTop: '8px', fontSize: '14px' }}>
+                      <div>✅ <strong>Nodes Signed:</strong> {(result.data as any).attempts?.length || 0}</div>
+                      <div>⏱️ <strong>Total Duration:</strong> {(result.data as any).totalDuration?.toFixed(2)}ms</div>
+                      <div>🔏 <strong>Signing Time:</strong> {(result.data as any).signingDuration?.toFixed(2)}ms</div>
+                      {(result.data as any).transactionId && (
+                        <div>🆔 <strong>Transaction ID:</strong> {(result.data as any).transactionId}</div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div style={{ 
+                    padding: '8px',
+                    backgroundColor: '#fff',
+                    borderRadius: '4px',
+                    marginBottom: '8px',
+                    border: '1px solid #ddd'
+                  }}>
+                    <strong>🗂️ Node Details:</strong>
+                    {(result.data as any).attempts?.map((attempt: any, idx: number) => (
+                      <div key={idx} style={{ 
+                        marginTop: '8px',
+                        padding: '8px',
+                        backgroundColor: attempt.status === 'success' ? '#e8f5e9' : '#ffebee',
+                        borderRadius: '4px',
+                        fontSize: '13px',
+                        border: `1px solid ${attempt.status === 'success' ? '#4caf50' : '#f44336'}`
+                      }}>
+                        <div><strong>Node {idx + 1}:</strong> {attempt.nodeId || 'N/A'}</div>
+                        <div>Status: {attempt.status === 'success' ? '✅ Success' : '❌ Failed'}</div>
+                        <div>Duration: {attempt.duration?.toFixed(2)}ms</div>
+                        {attempt.signatureMap && (
+                          <div style={{ marginTop: '4px' }}>
+                            <strong>Signature Map:</strong>
+                            <pre style={{ 
+                              margin: '4px 0 0 0',
+                              fontSize: '11px',
+                              whiteSpace: 'pre-wrap',
+                              wordBreak: 'break-all',
+                              fontFamily: 'monospace',
+                              maxHeight: '100px',
+                              overflow: 'auto'
+                            }}>
+                              {attempt.signatureMap.substring(0, 100)}...
+                            </pre>
+                          </div>
+                        )}
+                        {attempt.error && (
+                          <div style={{ marginTop: '4px', color: '#c62828' }}>
+                            <strong>Error:</strong> {attempt.error.errorMessage}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <details style={{ marginTop: '8px' }}>
+                    <summary style={{ cursor: 'pointer', fontWeight: 'bold' }}>
+                      📄 Full JSON Response
+                    </summary>
+                    <pre
+                      style={{
+                        margin: '8px 0 0 0',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-all',
+                        fontSize: '12px',
+                        fontFamily: 'monospace',
+                        backgroundColor: '#f5f5f5',
+                        padding: '8px',
+                        borderRadius: '4px',
+                        maxHeight: '300px',
+                        overflow: 'auto'
+                      }}
+                    >
+                      {JSON.stringify(result.data, null, 2)}
+                    </pre>
+                  </details>
+                </div>
+              ) : (
+                <pre
+                  style={{
+                    margin: '8px 0 0 0',
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-all',
+                    fontSize: '12px',
+                    fontFamily: 'monospace',
+                  }}
+                >
+                  {typeof result.data === 'object'
+                    ? JSON.stringify(result.data, null, 2)
+                    : String(result.data)}
+                </pre>
+              )}
             </div>
           )}
         </div>
       )}
+
+      {/* Transaction Progress Modal for HIP-1190 */}
+      <TransactionProgressModal
+        isOpen={progressState.isOpen}
+        phase={progressState.phase}
+        nodeIndex={progressState.nodeIndex}
+        totalNodes={progressState.totalNodes}
+        signingDuration={progressState.signingDuration}
+        attempts={progressState.attempts}
+        transactionId={progressState.transactionId}
+        onClose={() => setProgressState(prev => ({ ...prev, isOpen: false }))}
+        onRetry={handleRetry}
+      />
     </div>
   )
 }
