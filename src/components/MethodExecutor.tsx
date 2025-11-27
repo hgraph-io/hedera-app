@@ -164,6 +164,17 @@ const hederaMethods: MethodConfig[] = [
           { value: '10', label: '10 nodes (max reliability)' },
         ],
       },
+      {
+        name: 'executionStrategy',
+        label: 'Execution Strategy',
+        type: 'select',
+        required: true,
+        defaultValue: 'firstSuccess',
+        options: [
+          { value: 'firstSuccess', label: 'Stop at First Success (HIP-1190 Failover)' },
+          { value: 'allNodes', label: 'Execute on All Nodes (Testing)' },
+        ],
+      },
     ],
   },
 ]

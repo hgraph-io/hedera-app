@@ -198,6 +198,14 @@ function V2AppContent({
       : undefined
 
   // Setup Hedera methods
+  // Create signer for HIP-1190 signTransactions method
+  const hederaSigner =
+    appKitConfig?.universalProvider?.session && hederaAccount
+      ? appKitConfig.universalProvider.nativeProvider?.getSigner(
+          appKitConfig.universalProvider.session.topic,
+        )
+      : undefined
+
   const { executeHederaMethod } = useHederaMethods(
     appKitConfig?.universalProvider || ({} as HederaProvider),
     hederaAccount || '',
@@ -205,6 +213,7 @@ function V2AppContent({
     setSignedMsg,
     setNodes,
     undefined, // onProgress - handled by MethodExecutor
+    hederaSigner,
   )
 
   // Setup Ethereum methods
