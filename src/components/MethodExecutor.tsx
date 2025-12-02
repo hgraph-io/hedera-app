@@ -1098,7 +1098,7 @@ export function MethodExecutor({
                     border: '1px solid #ddd'
                   }}>
                     <strong>🗂️ Node Details:</strong>
-                    {(result.data as { attempts?: Array<{ nodeId?: string; status: string; duration?: number; signatureMap?: string }> }).attempts?.map((attempt, idx: number) => (
+                    {(result.data as { attempts?: Array<{ nodeId?: string; status: string; duration?: number; signatureMap?: string; error?: { errorMessage: string } }> }).attempts?.map((attempt, idx: number) => (
                       <div key={idx} style={{ 
                         marginTop: '8px',
                         padding: '8px',

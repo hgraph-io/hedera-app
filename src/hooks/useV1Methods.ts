@@ -354,7 +354,7 @@ export function useV1Methods(
             const allSignatures = signedTransactions.map((signedTx, index) => {
               const nodeAccountIds = signedTx.nodeAccountIds || []
               const nodeId = nodeAccountIds.length > 0 ? nodeAccountIds[0].toString() : 'Unknown'
-              const signatures = signedTx._signedTransactions.list.map((protoTx: { sigMap?: { sigPair?: Array<{ pubKeyPrefix?: Uint8Array; ed25519?: Uint8Array; ECDSASecp256k1?: Uint8Array }> } }) => {
+              const signatures = signedTx._signedTransactions.list.map((protoTx) => {
                 const sigPairs = protoTx.sigMap?.sigPair || []
                 return sigPairs.map((sigPair) => ({
                   publicKeyPrefix: sigPair.pubKeyPrefix ? Buffer.from(sigPair.pubKeyPrefix).toString('hex') : '',
