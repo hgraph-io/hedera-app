@@ -197,9 +197,9 @@ export const useHederaMethods = (
         const allSignatures = signedTransactions.map((signedTx, index) => {
           const nodeAccountIds = signedTx.nodeAccountIds || []
           const nodeId = nodeAccountIds.length > 0 ? nodeAccountIds[0].toString() : 'Unknown'
-          const signatures = signedTx._signedTransactions.list.map((protoTx: any) => {
+          const signatures = signedTx._signedTransactions.list.map((protoTx: { sigMap?: { sigPair?: Array<{ pubKeyPrefix?: Uint8Array; ed25519?: Uint8Array; ECDSASecp256k1?: Uint8Array }> } }) => {
             const sigPairs = protoTx.sigMap?.sigPair || []
-            return sigPairs.map((sigPair: any) => ({
+            return sigPairs.map((sigPair) => ({
               publicKeyPrefix: sigPair.pubKeyPrefix ? Buffer.from(sigPair.pubKeyPrefix).toString('hex') : '',
               signature: sigPair.ed25519 ? Buffer.from(sigPair.ed25519).toString('hex') : 
                          sigPair.ECDSASecp256k1 ? Buffer.from(sigPair.ECDSASecp256k1).toString('hex') : ''
@@ -296,10 +296,11 @@ export const useHederaMethods = (
             
             // If strategy is 'allNodes', continue to next node
             
-          } catch (error: any) {
+          } catch (error: unknown) {
             const execDuration = performance.now() - execStart
+            const errorObj = error instanceof Error ? error : new Error(String(error))
             
-            console.error(`❌ Node ${i + 1} (${nodeId}) failed in ${execDuration.toFixed(2)}ms:`, error.message)
+            console.error(`❌ Node ${i + 1} (${nodeId}) failed in ${execDuration.toFixed(2)}ms:`, errorObj.message)
             
             attempts.push({
               nodeIndex: i,
@@ -307,8 +308,8 @@ export const useHederaMethods = (
               status: 'failed',
               duration: execDuration,
               error: {
-                errorType: error.constructor?.name || 'Error',
-                errorMessage: error.message || 'Unknown error'
+                errorType: errorObj.constructor?.name || 'Error',
+                errorMessage: errorObj.message || 'Unknown error'
               }
             })
 
@@ -320,8 +321,8 @@ export const useHederaMethods = (
               duration: execDuration,
               error: {
                 nodeIndex: i,
-                errorType: error.constructor?.name || 'Error',
-                errorMessage: error.message
+                errorType: errorObj.constructor?.name || 'Error',
+                errorMessage: errorObj.message
               }
             })
 
@@ -335,7 +336,7 @@ export const useHederaMethods = (
                 allSignatures,
                 totalDuration,
                 attempts,
-                error: `Transaction failed on all ${signedTransactions.length} nodes. Last error: ${error.message}`
+                error: `Transaction failed on all ${signedTransactions.length} nodes. Last error: ${errorObj.message}`
               }
               
               throw new Error(JSON.stringify(errorResult))

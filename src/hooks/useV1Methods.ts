@@ -354,9 +354,9 @@ export function useV1Methods(
             const allSignatures = signedTransactions.map((signedTx, index) => {
               const nodeAccountIds = signedTx.nodeAccountIds || []
               const nodeId = nodeAccountIds.length > 0 ? nodeAccountIds[0].toString() : 'Unknown'
-              const signatures = signedTx._signedTransactions.list.map((protoTx: any) => {
+              const signatures = signedTx._signedTransactions.list.map((protoTx: { sigMap?: { sigPair?: Array<{ pubKeyPrefix?: Uint8Array; ed25519?: Uint8Array; ECDSASecp256k1?: Uint8Array }> } }) => {
                 const sigPairs = protoTx.sigMap?.sigPair || []
-                return sigPairs.map((sigPair: any) => ({
+                return sigPairs.map((sigPair) => ({
                   publicKeyPrefix: sigPair.pubKeyPrefix ? Buffer.from(sigPair.pubKeyPrefix).toString('hex') : '',
                   signature: sigPair.ed25519 ? Buffer.from(sigPair.ed25519).toString('hex') : 
                              sigPair.ECDSASecp256k1 ? Buffer.from(sigPair.ECDSASecp256k1).toString('hex') : ''
@@ -458,15 +458,16 @@ export function useV1Methods(
 
                 // If strategy is 'allNodes', continue to next node (testing mode)
                 
-              } catch (error: any) {
+              } catch (error: unknown) {
                 const execDuration = performance.now() - execStart
+                const errorObj = error instanceof Error ? error : new Error(String(error))
                 
-                console.error(`❌ Node ${i + 1} (${nodeId}) failed in ${execDuration.toFixed(2)}ms:`, error.message)
+                console.error(`❌ Node ${i + 1} (${nodeId}) failed in ${execDuration.toFixed(2)}ms:`, errorObj.message)
                 
                 const errorDetails = {
-                  errorType: error.constructor?.name || 'Error',
-                  errorMessage: error.message || 'Unknown error',
-                  stackTrace: error.stack
+                  errorType: errorObj.constructor?.name || 'Error',
+                  errorMessage: errorObj.message || 'Unknown error',
+                  stackTrace: errorObj.stack
                 }
 
                 attempts.push({
@@ -494,7 +495,7 @@ export function useV1Methods(
                   const totalDuration = performance.now() - signStart
                   throw new Error(
                     `Transaction failed on all ${signedTransactions.length} nodes. ` +
-                    `Last error: ${error.message}. ` +
+                    `Last error: ${errorObj.message}. ` +
                     `Total duration: ${totalDuration.toFixed(2)}ms`
                   )
                 }

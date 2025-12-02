@@ -1081,11 +1081,11 @@ export function MethodExecutor({
                   }}>
                     <strong>📊 Multi-Node Signing Summary:</strong>
                     <div style={{ marginTop: '8px', fontSize: '14px' }}>
-                      <div>✅ <strong>Nodes Signed:</strong> {(result.data as any).attempts?.length || 0}</div>
-                      <div>⏱️ <strong>Total Duration:</strong> {(result.data as any).totalDuration?.toFixed(2)}ms</div>
-                      <div>🔏 <strong>Signing Time:</strong> {(result.data as any).signingDuration?.toFixed(2)}ms</div>
-                      {(result.data as any).transactionId && (
-                        <div>🆔 <strong>Transaction ID:</strong> {(result.data as any).transactionId}</div>
+                      <div>✅ <strong>Nodes Signed:</strong> {(result.data as { attempts?: unknown[] }).attempts?.length || 0}</div>
+                      <div>⏱️ <strong>Total Duration:</strong> {(result.data as { totalDuration?: number }).totalDuration?.toFixed(2)}ms</div>
+                      <div>🔏 <strong>Signing Time:</strong> {(result.data as { signingDuration?: number }).signingDuration?.toFixed(2)}ms</div>
+                      {(result.data as { transactionId?: string }).transactionId && (
+                        <div>🆔 <strong>Transaction ID:</strong> {(result.data as { transactionId?: string }).transactionId}</div>
                       )}
                     </div>
                   </div>
@@ -1098,7 +1098,7 @@ export function MethodExecutor({
                     border: '1px solid #ddd'
                   }}>
                     <strong>🗂️ Node Details:</strong>
-                    {(result.data as any).attempts?.map((attempt: any, idx: number) => (
+                    {(result.data as { attempts?: Array<{ nodeId?: string; status: string; duration?: number; signatureMap?: string }> }).attempts?.map((attempt, idx: number) => (
                       <div key={idx} style={{ 
                         marginTop: '8px',
                         padding: '8px',
