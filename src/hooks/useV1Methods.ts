@@ -5,6 +5,7 @@ import {
   Hbar,
   Transaction,
   TransactionId,
+  Client,
 } from '@hashgraph/sdk'
 import {
   DAppSigner,
@@ -19,6 +20,20 @@ interface UseV1MethodsState {
   result: unknown
 }
 
+export interface ProgressUpdate {
+  phase: 'signing' | 'executing'
+  nodeIndex?: number
+  totalNodes?: number
+  status?: 'pending' | 'success' | 'failed'
+  duration?: number
+  error?: {
+    nodeIndex: number
+    errorType: string
+    errorMessage: string
+    stackTrace?: string
+  }
+}
+
 export function useV1Methods(
   signers: DAppSigner[],
   connector: DAppConnector | null,
@@ -27,6 +42,7 @@ export function useV1Methods(
   setNodes?: (nodes: string[]) => void,
   signedTransaction?: Transaction | null,
   setSignedTransaction?: (tx: Transaction | null) => void,
+  onProgress?: (update: ProgressUpdate) => void,
 ) {
   const [state, setState] = useState<UseV1MethodsState>({
     isExecuting: false,
@@ -43,7 +59,9 @@ export function useV1Methods(
         recipientId?: string
         message?: string
         maxFee?: string
-      },
+        nodeCount?: string
+        executionStrategy?: string
+      }
     ) => {
       if (!signers || signers.length === 0) {
         setState((prev) => ({
@@ -290,6 +308,238 @@ export function useV1Methods(
             return result
           }
 
+          case 'hedera_signTransactions': {            
+            if (!params?.to || !params?.amount) {
+              throw new Error('Missing required parameters: to and amount')
+            }
+
+            const accountId = signer.getAccountId()
+            if (!accountId) throw new Error('Account ID not available')
+
+            const nodeCount = Number(params.nodeCount) || 5
+            const executionStrategy = params.executionStrategy || 'firstSuccess'
+            
+            // Create transaction WITHOUT node IDs (required for HIP-1190)
+            const transaction = new TransferTransaction()
+              .setTransactionId(TransactionId.generate(accountId))
+              .addHbarTransfer(accountId.toString(), -Number(params.amount))
+              .addHbarTransfer(AccountId.fromString(params.to), Number(params.amount))
+              .setMaxTransactionFee(new Hbar(Number(params.maxFee) || 2))
+
+            // Track signing time
+            const signStart = performance.now()
+            
+            onProgress?.({ 
+              phase: 'signing', 
+              totalNodes: nodeCount 
+            })
+
+            // Sign for multiple nodes (HIP-1190)
+            const signedTransactions = await signer.signTransactions(
+              transaction,
+              nodeCount
+            )
+
+            const signingDuration = performance.now() - signStart
+            
+            onProgress?.({ 
+              phase: 'signing', 
+              duration: signingDuration,
+              totalNodes: nodeCount 
+            })
+
+            console.log(`Signed transaction for ${signedTransactions.length} nodes in ${signingDuration.toFixed(2)}ms`)
+
+            // Extract all signatures for reporting (matching V2)
+            const allSignatures = signedTransactions.map((signedTx, index) => {
+              const nodeAccountIds = signedTx.nodeAccountIds || []
+              const nodeId = nodeAccountIds.length > 0 ? nodeAccountIds[0].toString() : 'Unknown'
+              const signatures = signedTx._signedTransactions.list.map((protoTx) => {
+                const sigPairs = protoTx.sigMap?.sigPair || []
+                return sigPairs.map((sigPair) => ({
+                  publicKeyPrefix: sigPair.pubKeyPrefix ? Buffer.from(sigPair.pubKeyPrefix).toString('hex') : '',
+                  signature: sigPair.ed25519 ? Buffer.from(sigPair.ed25519).toString('hex') : 
+                             sigPair.ECDSASecp256k1 ? Buffer.from(sigPair.ECDSASecp256k1).toString('hex') : ''
+                }))
+              }).flat()
+              
+              return {
+                nodeIndex: index,
+                nodeId,
+                transactionId: signedTx.transactionId?.toString() || '',
+                signatures
+              }
+            })
+
+            // Try each node until one succeeds or execute all nodes (based on strategy)
+            const client = Client.forTestnet()
+            const attempts: Array<{
+              nodeIndex: number
+              nodeId: string
+              status: 'success' | 'failed'
+              duration: number
+              transactionId?: string
+              error?: {
+                errorType: string
+                errorMessage: string
+                stackTrace?: string
+              }
+            }> = []
+
+            let firstSuccessIndex = -1
+            let firstTransactionId: string | undefined
+
+            for (let i = 0; i < signedTransactions.length; i++) {
+              const execStart = performance.now()
+              const nodeAccountIds = signedTransactions[i].nodeAccountIds || []
+              const nodeId = nodeAccountIds.length > 0 ? nodeAccountIds[0].toString() : 'Unknown'
+              
+              onProgress?.({
+                phase: 'executing',
+                nodeIndex: i,
+                totalNodes: signedTransactions.length,
+                status: 'pending'
+              })
+
+              try {
+                console.log(`Attempting node ${i + 1}/${signedTransactions.length} (${nodeId})...`)
+                
+                const response = await signedTransactions[i].execute(client)
+                const execDuration = performance.now() - execStart
+                const transactionId = response.transactionId.toString()
+                
+                console.log(`✅ Success on node ${i + 1} in ${execDuration.toFixed(2)}ms, TX ID: ${transactionId}`)
+                
+                attempts.push({
+                  nodeIndex: i,
+                  nodeId,
+                  status: 'success',
+                  duration: execDuration,
+                  transactionId
+                })
+
+                onProgress?.({
+                  phase: 'executing',
+                  nodeIndex: i,
+                  totalNodes: signedTransactions.length,
+                  status: 'success',
+                  duration: execDuration
+                })
+
+                // Store first success
+                if (firstSuccessIndex === -1) {
+                  firstSuccessIndex = i
+                  firstTransactionId = transactionId
+                  if (setTransactionId) {
+                    setTransactionId(firstTransactionId)
+                  }
+                }
+
+                // If strategy is 'firstSuccess', return immediately (HIP-1190 failover)
+                if (executionStrategy === 'firstSuccess') {
+                  const totalDuration = performance.now() - signStart
+
+                  result = {
+                    success: true,
+                    transactionId,
+                    nodeIndexUsed: i,
+                    totalAttempts: i + 1,
+                    totalNodes: signedTransactions.length,
+                    signingDuration,
+                    totalDuration,
+                    attempts,
+                    allSignatures,
+                    executionStrategy: 'firstSuccess',
+                    message: `Transaction successful on node ${i + 1}/${signedTransactions.length} (${nodeId}). Stopped at first success.`
+                  }
+                  
+                  return result
+                }
+
+                // If strategy is 'allNodes', continue to next node (testing mode)
+                
+              } catch (error: unknown) {
+                const execDuration = performance.now() - execStart
+                const errorObj = error instanceof Error ? error : new Error(String(error))
+                
+                console.error(`❌ Node ${i + 1} (${nodeId}) failed in ${execDuration.toFixed(2)}ms:`, errorObj.message)
+                
+                const errorDetails = {
+                  errorType: errorObj.constructor?.name || 'Error',
+                  errorMessage: errorObj.message || 'Unknown error',
+                  stackTrace: errorObj.stack
+                }
+
+                attempts.push({
+                  nodeIndex: i,
+                  nodeId,
+                  status: 'failed',
+                  duration: execDuration,
+                  error: errorDetails
+                })
+
+                onProgress?.({
+                  phase: 'executing',
+                  nodeIndex: i,
+                  totalNodes: signedTransactions.length,
+                  status: 'failed',
+                  duration: execDuration,
+                  error: {
+                    nodeIndex: i,
+                    ...errorDetails
+                  }
+                })
+
+                // For 'firstSuccess' strategy: if this was the last node, throw error
+                if (executionStrategy === 'firstSuccess' && i === signedTransactions.length - 1) {
+                  const totalDuration = performance.now() - signStart
+                  throw new Error(
+                    `Transaction failed on all ${signedTransactions.length} nodes. ` +
+                    `Last error: ${errorObj.message}. ` +
+                    `Total duration: ${totalDuration.toFixed(2)}ms`
+                  )
+                }
+                
+                // For 'allNodes' strategy: continue to next node regardless
+              }
+            }
+
+            // If we reach here with 'allNodes' strategy, return results
+            if (executionStrategy === 'allNodes') {
+              const totalDuration = performance.now() - signStart
+              const successCount = attempts.filter(a => a.status === 'success').length
+              const failCount = attempts.filter(a => a.status === 'failed').length
+
+              if (successCount === 0) {
+                throw new Error(
+                  `All ${signedTransactions.length} nodes failed. ` +
+                  `Total duration: ${totalDuration.toFixed(2)}ms`
+                )
+              }
+
+              result = {
+                success: true,
+                transactionId: firstTransactionId!,
+                nodeIndexUsed: firstSuccessIndex,
+                totalAttempts: signedTransactions.length,
+                totalNodes: signedTransactions.length,
+                signingDuration,
+                totalDuration,
+                attempts,
+                allSignatures,
+                executionStrategy: 'allNodes',
+                successCount,
+                failCount,
+                message: `Executed on all ${signedTransactions.length} nodes. Success: ${successCount}, Failed: ${failCount}`
+              }
+              
+              return result
+            }
+
+            // Should never reach here, but TypeScript needs a return
+            throw new Error('Unexpected error: no nodes were attempted')
+          }
+
           default:
             throw new Error(`Unsupported method: ${method}`)
         }
@@ -308,6 +558,7 @@ export function useV1Methods(
       setNodes,
       signedTransaction,
       setSignedTransaction,
+      onProgress,
     ],
   )
 

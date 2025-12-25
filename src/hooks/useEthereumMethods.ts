@@ -255,9 +255,9 @@ export const useEthereumMethods = ({
         const p = params as unknown as EthSignMessageParams
         // personal_sign expects [message, address] as params
         // The message needs to be hex-encoded
-        const messageHex = p.message.startsWith('0x')
+        const messageHex = p.message?.startsWith('0x')
           ? p.message
-          : hexlify(new TextEncoder().encode(p.message))
+          : hexlify(new TextEncoder().encode(p.message || ''))
 
         // Make direct RPC call through the wallet provider with chainId
         const signature = await walletProvider.request(

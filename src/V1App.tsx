@@ -37,6 +37,7 @@ export function V1App() {
 
   // V1 connection state
   const v1Connection = useDAppConnectorV1()
+  
   const v1Methods = useV1Methods(
     v1Connection.signers,
     v1Connection.connector,
@@ -45,6 +46,7 @@ export function V1App() {
     setNodes,
     signedTransaction,
     setSignedTransaction,
+    undefined, // onProgress - handled by MethodExecutor
   )
 
   // Get configuration from localStorage
