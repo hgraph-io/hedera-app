@@ -6,7 +6,7 @@ import {
   DAppSigner,
 } from '@hashgraph/hedera-wallet-connect'
 import { SessionTypes } from '@walletconnect/types'
-import { LedgerId, AccountId } from '@hashgraph/sdk'
+import { LedgerId, AccountId } from '@hiero-ledger/sdk'
 import { metadata } from '../config'
 
 export interface DAppConnectorState {

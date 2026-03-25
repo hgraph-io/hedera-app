@@ -6,7 +6,7 @@ import {
   Transaction,
   TransactionId,
   Client,
-} from '@hashgraph/sdk'
+} from '@hiero-ledger/sdk'
 import {
   DAppSigner,
   DAppConnector,
@@ -334,28 +334,31 @@ export function useV1Methods(
               totalNodes: nodeCount 
             })
 
-            // Sign for multiple nodes (HIP-1190)
-            const signedTransactions = await signer.signTransactions(
-              transaction,
-              nodeCount
-            )
+            // Sign for multiple nodes (HIP-1190) - sign each copy individually
+            const signedTransactions: TransferTransaction[] = []
+            for (let n = 0; n < nodeCount; n++) {
+              const txCopy = TransferTransaction.fromBytes(transaction.toBytes()) as TransferTransaction
+              const signed = await signer.signTransaction(txCopy)
+              signedTransactions.push(signed as TransferTransaction)
+            }
 
             const signingDuration = performance.now() - signStart
-            
-            onProgress?.({ 
-              phase: 'signing', 
+
+            onProgress?.({
+              phase: 'signing',
               duration: signingDuration,
-              totalNodes: nodeCount 
+              totalNodes: nodeCount
             })
 
             console.log(`Signed transaction for ${signedTransactions.length} nodes in ${signingDuration.toFixed(2)}ms`)
 
             // Extract all signatures for reporting (matching V2)
-            const allSignatures = signedTransactions.map((signedTx, index) => {
+            const allSignatures = signedTransactions.map((signedTx: TransferTransaction, index: number) => {
               const nodeAccountIds = signedTx.nodeAccountIds || []
               const nodeId = nodeAccountIds.length > 0 ? nodeAccountIds[0].toString() : 'Unknown'
-              const signatures = signedTx._signedTransactions.list.map((protoTx) => {
-                const sigPairs = protoTx.sigMap?.sigPair || []
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const signatures = ((signedTx as unknown as Record<string, any>)._signedTransactions.list as Array<Record<string, any>>).map((protoTx) => {
+                const sigPairs = (protoTx.sigMap?.sigPair || []) as Array<Record<string, Uint8Array>>
                 return sigPairs.map((sigPair) => ({
                   publicKeyPrefix: sigPair.pubKeyPrefix ? Buffer.from(sigPair.pubKeyPrefix).toString('hex') : '',
                   signature: sigPair.ed25519 ? Buffer.from(sigPair.ed25519).toString('hex') : 
@@ -430,7 +433,7 @@ export function useV1Methods(
                 if (firstSuccessIndex === -1) {
                   firstSuccessIndex = i
                   firstTransactionId = transactionId
-                  if (setTransactionId) {
+                  if (setTransactionId && firstTransactionId) {
                     setTransactionId(firstTransactionId)
                   }
                 }

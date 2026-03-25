@@ -9,7 +9,7 @@ import {
   Query,
   TransactionId,
   TransferTransaction,
-} from '@hashgraph/sdk'
+} from '@hiero-ledger/sdk'
 import {
   DAppSigner,
   HederaProvider,
@@ -187,18 +187,24 @@ export const useHederaMethods = (
           throw new Error('DAppSigner is required for hedera_signTransactions')
         }
 
-        const signedTransactions = await signer.signTransactions(transaction, nodeCount)
+        const signedTransactions: HederaTransaction[] = []
+        for (let n = 0; n < nodeCount; n++) {
+          const txCopy = TransferTransaction.fromBytes(transaction.toBytes()) as TransferTransaction
+          const signed = await signer.signTransaction(txCopy)
+          signedTransactions.push(signed)
+        }
 
         const signingDuration = performance.now() - signStart
         
         console.log(`✅ Signed transaction for ${signedTransactions.length} nodes in ${signingDuration.toFixed(2)}ms`)
 
         // Extract all signatures for reporting
-        const allSignatures = signedTransactions.map((signedTx, index) => {
+        const allSignatures = signedTransactions.map((signedTx: HederaTransaction, index: number) => {
           const nodeAccountIds = signedTx.nodeAccountIds || []
           const nodeId = nodeAccountIds.length > 0 ? nodeAccountIds[0].toString() : 'Unknown'
-          const signatures = signedTx._signedTransactions.list.map((protoTx) => {
-            const sigPairs = protoTx.sigMap?.sigPair || []
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const signatures = ((signedTx as unknown as Record<string, any>)._signedTransactions.list as Array<Record<string, any>>).map((protoTx) => {
+            const sigPairs = (protoTx.sigMap?.sigPair || []) as Array<Record<string, Uint8Array>>
             return sigPairs.map((sigPair) => ({
               publicKeyPrefix: sigPair.pubKeyPrefix ? Buffer.from(sigPair.pubKeyPrefix).toString('hex') : '',
               signature: sigPair.ed25519 ? Buffer.from(sigPair.ed25519).toString('hex') : 
