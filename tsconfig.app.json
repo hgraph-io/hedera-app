@@ -22,8 +22,8 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
     "paths": {
-      "@hiero-ledger/sdk": ["../hedera-wallet-connect/node_modules/@hiero-ledger/sdk"],
-      "@hiero-ledger/sdk/*": ["../hedera-wallet-connect/node_modules/@hiero-ledger/sdk/*"]
+      "@hiero-ledger/sdk": ["./node_modules/@hiero-ledger/sdk"],
+      "@hiero-ledger/sdk/*": ["./node_modules/@hiero-ledger/sdk/*"]
     }
   },
   "include": ["src"],
