@@ -16,6 +16,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      // Ensure single copy of @hiero-ledger/sdk is used
+      '@hiero-ledger/sdk': resolve(__dirname, 'node_modules', '@hiero-ledger', 'sdk'),
       'vite-plugin-node-polyfills/shims/buffer': resolve(
         __dirname,
         'node_modules',

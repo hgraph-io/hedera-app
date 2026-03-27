@@ -3,7 +3,7 @@ import { render, act } from '@testing-library/react'
 import { describe, it, beforeEach, expect, vi } from 'vitest'
 import { useHederaMethods } from '../../src/hooks/useHederaMethods'
 
-vi.mock('@hashgraph/sdk', () => {
+vi.mock('@hiero-ledger/sdk', () => {
   class Hbar {
     constructor(_: number) {}
     negated() {

@@ -109,7 +109,7 @@ export function V2App() {
 
     createAppKit({
       adapters: [nativeHederaAdapter, eip155HederaAdapter],
-      universalProvider,
+      universalProvider: universalProvider as unknown as Parameters<typeof createAppKit>[0]['universalProvider'],
       projectId,
       metadata,
       networks,

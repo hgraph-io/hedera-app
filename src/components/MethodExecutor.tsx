@@ -123,7 +123,7 @@ const hederaMethods: MethodConfig[] = [
     params: [],
   },
   {
-    name: HederaJsonRpcMethod.SignTransactions,
+    name: 'hedera_signTransactions',
     displayName: 'Sign Transactions Multi-Node (hedera_signTransactions - HIP-1190)',
     description: 'Sign transaction for multiple nodes with automatic failover and performance tracking',
     params: [
@@ -754,7 +754,7 @@ export function MethodExecutor({
     })
     
     // Re-execute with same params
-    await executeWithProgress(HederaJsonRpcMethod.SignTransactions, lastTransactionParams)
+    await executeWithProgress('hedera_signTransactions', lastTransactionParams)
   }
 
   // Execute with progress tracking
@@ -809,7 +809,7 @@ export function MethodExecutor({
     }
 
     // Handle HIP-1190 with progress modal
-    if (currentMethod.name === HederaJsonRpcMethod.SignTransactions) {
+    if (currentMethod.name === 'hedera_signTransactions') {
       console.log('[MethodExecutor.handleExecute] HIP-1190 detected')
       setLastTransactionParams(params)
       setProgressState({
@@ -1067,7 +1067,7 @@ export function MethodExecutor({
               
               {/* Special formatting for HIP-1190 results */}
               {result.success && 
-               currentMethod.name === HederaJsonRpcMethod.SignTransactions && 
+               currentMethod.name === 'hedera_signTransactions' && 
                typeof result.data === 'object' && 
                result.data !== null &&
                'attempts' in result.data ? (

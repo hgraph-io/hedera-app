@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Transaction } from '@hashgraph/sdk'
+import { Transaction } from '@hiero-ledger/sdk'
 
 interface SignedTransactionModalProps {
   isOpen: boolean

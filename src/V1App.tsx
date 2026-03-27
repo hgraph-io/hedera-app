@@ -1,7 +1,7 @@
 import './App.css'
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Transaction } from '@hashgraph/sdk'
+import { Transaction } from '@hiero-ledger/sdk'
 import { ConnectionWrapper } from './components/ConnectionWrapper'
 import { V1ConnectionModal } from './components/V1ConnectionModal'
 import { ConfigurationModal } from './components/ConfigurationModal'
