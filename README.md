@@ -64,6 +64,10 @@ such as Wagmi, Viem, AppKit, and WalletKit.
 
 > [!WARNING]
 >
+> The `eip155` namespace in `@hashgraph/hedera-wallet-connect` is deprecated. For EVM
+> compatibility, use `WagmiAdapter` from `@reown/appkit-adapter-wagmi` instead. See the
+> [migration guide](https://github.com/hashgraph/hedera-wallet-connect/pull/678) for details.
+>
 > When using the EVM namespace, Hedera accounts that have Ed25519 public/private key pairs are
 > not supported. See the docs for more information.
 >
@@ -74,8 +78,9 @@ A strong reason to integrate Hedera via the native APIs is to fully support all 
 and native transaction types provided by Hedera.
 
 In the context of Reown's WalletKit and AppKit, this is defined by the namespaces requested by
-apps to wallets. The namespace is `eip155` for the EVM compatibility layer and `hedera` for
-native integration.
+apps to wallets. The namespace `hedera` is used for native integration. For EVM compatibility,
+use `WagmiAdapter` from `@reown/appkit-adapter-wagmi` instead of the deprecated `eip155`
+namespace in `@hashgraph/hedera-wallet-connect`.
 
 ## Running tests with coverage
 
